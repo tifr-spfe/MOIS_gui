@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Thu Sep 29 00:09:39 2022
 
+@author: Himanshu Tyagi
+"""
 # Form implementation generated from reading ui file 'sign_up.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.7
