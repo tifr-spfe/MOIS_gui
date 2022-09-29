@@ -31,6 +31,7 @@ from PyQt5.QtWidgets import QDialog, QApplication, QPushButton, QVBoxLayout
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from matplotlib.figure import Figure
+from matplotlib.colors import LogNorm
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as Navi
 from matplotlib.figure import Figure
@@ -93,7 +94,7 @@ class Ui_MainWindow(object):
         
         
         self.label_2 = QtWidgets.QLabel(self.centralwidget)
-        self.label_2.setGeometry(QtCore.QRect(120, 250, 131, 31))
+        self.label_2.setGeometry(QtCore.QRect(120, 250, 131, 61))
         self.label_2.setObjectName("label_2")
         """
         self.label_3 = QtWidgets.QLabel(self.centralwidget)
@@ -142,7 +143,7 @@ class Ui_MainWindow(object):
         self.pushButton_4.setGeometry(QtCore.QRect(560, 570, 91, 31))
         self.pushButton_4.setObjectName("pushButton_4")
         self.tableWidget = QtWidgets.QTableWidget(self.centralwidget)
-        self.tableWidget.setGeometry(QtCore.QRect(280, 250, 210, 160))
+        self.tableWidget.setGeometry(QtCore.QRect(280, 180, 275, 185))
         self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setColumnCount(2)
         self.tableWidget.setRowCount(4)
@@ -159,7 +160,7 @@ class Ui_MainWindow(object):
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(1, item)
         self.pushButton_5 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_5.setGeometry(QtCore.QRect(280, 170, 371, 41))
+        self.pushButton_5.setGeometry(QtCore.QRect(280, 380, 371, 41))
         self.pushButton_5.setObjectName("pushButton_5")
         self.gridLayoutWidget = QtWidgets.QWidget(self.centralwidget)
         self.gridLayoutWidget.setGeometry(QtCore.QRect(750,30,661,551))
@@ -237,7 +238,7 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
 #        self.pushButton.setText(_translate("MainWindow", "Sign Up"))
         self.label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Target name</span></p></body></html>"))
-        self.label_2.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Slit Configurations</span></p></body></html>"))
+        self.label_2.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Slit Configurations <br> (Enter in arcsec) </span></p></body></html>"))
   #      self.label_3.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Confirm Password</span></p></body></html>"))
         self.label_4.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">A</span></p><p><br/></p></body></html>"))
         self.label_5.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:black;\">B</span></p><p><br/></p></body></html>"))
@@ -253,9 +254,9 @@ class Ui_MainWindow(object):
         item = self.tableWidget.verticalHeaderItem(3)
         item.setText(_translate("MainWindow", "3"))
         item = self.tableWidget.horizontalHeaderItem(0)
-        item.setText(_translate("MainWindow", "X"))
+        item.setText(_translate("MainWindow", "Slit Width"))
         item = self.tableWidget.horizontalHeaderItem(1)
-        item.setText(_translate("MainWindow", "Y"))
+        item.setText(_translate("MainWindow", "Offset"))
         self.pushButton_5.setText(_translate("MainWindow", "Load Image"))
     
     def sum(self):
@@ -291,7 +292,7 @@ class Ui_MainWindow(object):
             hdu = paths[0][0]
             wcs = WCS(hdu.header)
     
-            size = u.Quantity((40,40), u.arcsec)
+            size = u.Quantity((120,120), u.arcsec)
             stamp = Cutout2D(hdu.data, coord, size, wcs=wcs)
             #fig, ax = plt.subplots( subplot_kw={'projection': stamp.wcs}, dpi = 300)
             projection = stamp.wcs
@@ -327,19 +328,25 @@ class Ui_MainWindow(object):
             
             
             ax = self.canv.fig.add_subplot(111, projection=stamp.wcs)
-            ax.imshow(stamp.data, origin='lower', cmap="gist_earth") 
+            ax.imshow(stamp.data, origin='lower', cmap="jet", norm=LogNorm()) 
             
             sky_center = SkyCoord(42, 43, unit='deg')
             sky_radius = Angle(10, 'arcsec')
-            sky_region = RectangleSkyRegion(coord, width=5*u.arcsec, height=10*u.arcsec)
+            
+            slit_width = float(self.tableWidget.item(0, 0).text())
+            delta_x = float(self.tableWidget.item(0, 1).text())
+            coord_slit = SkyCoord(coord.ra+(delta_x/3600)*u.deg, coord.dec)
+            
+            
+            sky_region = RectangleSkyRegion(coord_slit, width=slit_width *u.arcsec, height=10*u.arcsec)
             pixel_region = sky_region.to_pixel(stamp.wcs)
             #pixel_region.plot()
-            artist = pixel_region.as_artist(color='red', lw=2, label="Slit X" )
+            artist = pixel_region.as_artist(color='red', lw=2)
 
             
             ax.add_artist(artist)
-            ax.text(coord.ra.value-5/3600, coord.dec.value, 'Slit X', transform=ax.get_transform('world'), c='r', weight="bold")
-            ax.scatter(coord.ra.value, coord.dec.value, transform=ax.get_transform('world'))
+            ax.text(0.1,0.9, 'Slit X', transform=ax.transAxes, c='r', weight="bold")
+            #ax.scatter(coord.ra.value, coord.dec.value, transform=ax.get_transform('world'))
             
             ax.plot_coord(coord)
             ax.set_xlabel('RA')
@@ -352,7 +359,7 @@ class Ui_MainWindow(object):
             ax.set_title("Matplotlib integration")
             """
             
-            plt.legend(loc='best')
+            #plt.legend(loc='best')
             self.canv.draw()
         except:
             print("Object not found")
