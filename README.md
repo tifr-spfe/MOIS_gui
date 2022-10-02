@@ -5,6 +5,5 @@ This software will need following python packages,
 3. `Regions`
 4. `Astroquery`
 5. `PyQt5`
-6. `PySide6`
-7. `sip`
-8. `Skyview`
+6. `sip`
+7. `Skyview`
