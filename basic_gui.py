@@ -70,7 +70,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1535, 1266)
+        MainWindow.resize(1400, 800)
         MainWindow.setFocusPolicy(QtCore.Qt.TabFocus)
         MainWindow.setStyleSheet("\n"
 "\n"
