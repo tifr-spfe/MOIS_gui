@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Sep 29 19:43:16 2022
-
-@author: black_neko
-"""
-
 # -*- coding: utf-8 -*-
 """
 Created on Thu Sep 29 00:09:39 2022
@@ -22,12 +14,10 @@ Created on Thu Sep 29 00:09:39 2022
 
 
 
-from astropy.coordinates import SkyCoord
 from astropy.coordinates import Angle, SkyCoord
 from regions import RectangleSkyRegion
 from astropy.wcs import WCS
 from astropy.io import fits
-#from astropy.utils.data import get_pkg_data_filename
 import matplotlib.pyplot as plt
 from astroquery.skyview import SkyView
 import astropy.units as u
@@ -40,22 +30,10 @@ from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from matplotlib.figure import Figure
 from matplotlib.colors import LogNorm
-
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as Navi
 from matplotlib.figure import Figure
 import platform
 
-from PyQt5 import QtWidgets as qtw
-from PyQt5 import QtCore as qtc
-
-from PySide6.QtCore import Qt, Slot
-from PySide6.QtWidgets import (
-    QApplication,
-    QWidget,
-    QDoubleSpinBox,
-    QVBoxLayout,
-    QHBoxLayout,
-)
 
 import sip
 
