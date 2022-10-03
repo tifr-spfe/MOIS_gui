@@ -2,3 +2,4 @@
 1. Temperature reading need to be added.
 2. Tooltips have been updated.
 3. Need to add object coordinates reading from a csv file feature.
+4. Add threading to the processes. 
