@@ -23,7 +23,6 @@ from astroquery.skyview import SkyView
 import astropy.units as u
 from astropy.nddata import Cutout2D
 from PyQt5 import QtCore, QtGui, QtWidgets
-import matplotlib.pyplot as plt
 import sys
 from PyQt5.QtWidgets import QDialog, QApplication, QPushButton, QVBoxLayout, QHeaderView
 from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -31,10 +30,6 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from matplotlib.figure import Figure
 from matplotlib.colors import LogNorm
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as Navi
-from matplotlib.figure import Figure
-import platform
-
-
 import sip
 
 class MatplotlibCanvas(FigureCanvasQTAgg):
@@ -64,10 +59,12 @@ class Ui_MainWindow(object):
         self.textEdit = QtWidgets.QLineEdit(self.centralwidget)
         self.textEdit.setGeometry(QtCore.QRect(280, 110, 371, 41))
         self.textEdit.setObjectName("textEdit")
+        self.textEdit.setToolTip("Enter simbad searchable name")
         
         self.textEdit_filename = QtWidgets.QLineEdit(self.centralwidget)
         self.textEdit_filename.setGeometry(QtCore.QRect(280, 180, 371, 41))
         self.textEdit_filename.setObjectName("textEdit_filename")
+        self.textEdit_filename.setToolTip("Optional")
         
         """
         self.textEdit_2 = QtWidgets.QTextEdit(self.centralwidget)
