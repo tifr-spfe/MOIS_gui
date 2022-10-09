@@ -21,6 +21,7 @@ from astroquery.skyview import SkyView
 import astropy.units as u
 from astropy.nddata import Cutout2D
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QMessageBox
 import sys
 from PyQt5.QtWidgets import QDialog, QApplication, QPushButton, QVBoxLayout, QHeaderView
 from matplotlib.backends.backend_qt5agg import FigureCanvas
@@ -60,9 +61,17 @@ class Ui_MainWindow(object):
         self.textEdit.setToolTip("Enter simbad searchable name")
         
         self.textEdit_filename = QtWidgets.QLineEdit(self.centralwidget)
-        self.textEdit_filename.setGeometry(QtCore.QRect(280, 180, 371, 41))
+        self.textEdit_filename.setGeometry(QtCore.QRect(280, 180, 250, 41))
         self.textEdit_filename.setObjectName("textEdit_filename")
-        self.textEdit_filename.setToolTip("Optional")
+        self.textEdit_filename.setToolTip("Optional (overrides Target Name)")
+
+        self.file_upload = QtWidgets.QPushButton(self.centralwidget)
+        self.file_upload.setGeometry(QtCore.QRect(531, 180, 120, 41))
+        self.file_upload.setIcon( QtGui.QIcon("upload2.png"))
+        self.file_upload.setObjectName("file_upload")
+        self.file_upload.setToolTip("Upload a .fits file")
+        
+        
         
         """
         self.textEdit_2 = QtWidgets.QTextEdit(self.centralwidget)
@@ -163,6 +172,8 @@ class Ui_MainWindow(object):
         self.pushButton_5 = QtWidgets.QPushButton(self.centralwidget)
         self.pushButton_5.setGeometry(QtCore.QRect(280, 450, 371, 41))
         self.pushButton_5.setObjectName("pushButton_5")
+        self.pushButton_5.setToolTip("Plot slit configuration over sky image")
+        
         self.gridLayoutWidget = QtWidgets.QWidget(self.centralwidget)
         self.gridLayoutWidget.setGeometry(QtCore.QRect(750,50,661,661))
         self.gridLayoutWidget.setObjectName("gridLayoutWidget")
@@ -231,7 +242,7 @@ class Ui_MainWindow(object):
         #self.pushButton_4.clicked.connect(self.plainTextEdit_2.clear)
         #self.pushButton_4.clicked.connect(self.plainTextEdit_3.clear)
         self.pushButton_5.clicked.connect(self.plot_table)
-                
+        self.file_upload.clicked.connect(self.open_file)    
         
 
 
@@ -260,7 +271,15 @@ class Ui_MainWindow(object):
         item = self.tableWidget.horizontalHeaderItem(1)
         item.setText(_translate("MainWindow", "Offset"))
         self.pushButton_5.setText(_translate("MainWindow", "Load Image"))
-    
+
+
+    def open_file(self):
+            self.filename = QtWidgets.QFileDialog.getOpenFileName(None, 'Open File', '*.fits')
+            print(self.filename[0])
+            self.textEdit_filename.setText(self.filename[0])
+
+
+        
     def sum(self):
     
         a = self.plainTextEdit_2.toPlainText()
@@ -394,7 +413,7 @@ class Ui_MainWindow(object):
             self.canv.draw()
         except:
             print("Object not found")
-            from PyQt5.QtWidgets import QMessageBox
+            
 
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
@@ -406,7 +425,6 @@ class Ui_MainWindow(object):
 
 
 if __name__ == "__main__":
-    import sys
     app = QtWidgets.QApplication(sys.argv)
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
