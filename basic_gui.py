@@ -31,6 +31,10 @@ from matplotlib.colors import LogNorm
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as Navi
 import sip
 
+
+y = 70
+
+
 class MatplotlibCanvas(FigureCanvasQTAgg):
 	def __init__(self,parent=None, dpi = 120):
 		self.fig = Figure(figsize=[10,10], dpi = dpi)
@@ -55,102 +59,51 @@ class Ui_MainWindow(object):
         self.pushButton.setGeometry(QtCore.QRect(280, 300, 106, 30))
         self.pushButton.setObjectName("pushButton")
         """ 
+        self.label = QtWidgets.QLabel(self.centralwidget)
+        self.label.setGeometry(QtCore.QRect(120, y+70*0, 131, 31))
+        self.label.setObjectName("label")
+        
         self.textEdit = QtWidgets.QLineEdit(self.centralwidget)
-        self.textEdit.setGeometry(QtCore.QRect(280, 110, 371, 41))
+        self.textEdit.setGeometry(QtCore.QRect(280, y+ 0*70, 371, 41))
         self.textEdit.setObjectName("textEdit")
         self.textEdit.setToolTip("Enter simbad searchable name")
         
+        
+        
+        self.label_filename = QtWidgets.QLabel(self.centralwidget)
+        self.label_filename.setGeometry(QtCore.QRect(120, y+70*2, 131, 31))
+        self.label_filename.setObjectName("label")
+        
         self.textEdit_filename = QtWidgets.QLineEdit(self.centralwidget)
-        self.textEdit_filename.setGeometry(QtCore.QRect(280, 180, 250, 41))
+        self.textEdit_filename.setGeometry(QtCore.QRect(280, y+70*2, 250, 41))
         self.textEdit_filename.setObjectName("textEdit_filename")
         self.textEdit_filename.setToolTip("Optional (overrides Target Name)")
 
         self.file_upload = QtWidgets.QPushButton(self.centralwidget)
-        self.file_upload.setGeometry(QtCore.QRect(531, 180, 120, 41))
+        self.file_upload.setGeometry(QtCore.QRect(531, y+70*2, 120, 41))
         self.file_upload.setIcon( QtGui.QIcon("upload2.png"))
         self.file_upload.setObjectName("file_upload")
         self.file_upload.setToolTip("Upload a .fits file")
         
+
+        self.coords_label = QtWidgets.QLabel(self.centralwidget)
+        self.coords_label.setGeometry(QtCore.QRect(120, y+70*1, 131, 31))
+        self.coords_label.setObjectName("coords_label")
         
         
-        """
-        self.textEdit_2 = QtWidgets.QTextEdit(self.centralwidget)
-        self.textEdit_2.setGeometry(QtCore.QRect(280, 170, 371, 41))
-        self.textEdit_2.setObjectName("textEdit_2")
-        """
-        """
-        self.plainTextEdit = QtWidgets.QPlainTextEdit(self.centralwidget)
-        self.plainTextEdit.setGeometry(QtCore.QRect(280, 230, 371, 41))
-        self.plainTextEdit.setObjectName("plainTextEdit")
-        """
+        self.coords = QtWidgets.QLineEdit(self.centralwidget)
+        self.coords.setGeometry(QtCore.QRect(280, y+70*1, 371, 41))
+        self.coords.setObjectName("coords")
+        self.coords.setToolTip("Enter Coordinates (Optional, if Object name is given.)")
         
-        self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(120, 110, 131, 31))
-        self.label.setObjectName("label")
-        
-        self.label_filename = QtWidgets.QLabel(self.centralwidget)
-        self.label_filename.setGeometry(QtCore.QRect(120, 180, 131, 31))
-        self.label_filename.setObjectName("label")
-        
+
         self.label_2 = QtWidgets.QLabel(self.centralwidget)
-        self.label_2.setGeometry(QtCore.QRect(120, 250, 180, 120))
+        self.label_2.setGeometry(QtCore.QRect(120, y+70*3, 180, 120))
         self.label_2.setObjectName("label_2")
-        """
-        self.label_3 = QtWidgets.QLabel(self.centralwidget)
-        self.label_3.setGeometry(QtCore.QRect(120, 230, 131, 31))
-        self.label_3.setObjectName("label_3")
-        
-        self.label_4 = QtWidgets.QLabel(self.centralwidget)
-        self.label_4.setGeometry(QtCore.QRect(190, 510, 131, 31))
-        self.label_4.setObjectName("label_4")
-        
-        self.plainTextEdit_2 = QtWidgets.QPlainTextEdit(self.centralwidget)
-        self.plainTextEdit_2.setGeometry(QtCore.QRect(340, 500, 371, 41))
-        self.plainTextEdit_2.setObjectName("plainTextEdit_2")
-        self.plainTextEdit_3 = QtWidgets.QPlainTextEdit(self.centralwidget)
-        self.plainTextEdit_3.setGeometry(QtCore.QRect(340, 550, 371, 41))
-        self.plainTextEdit_3.setObjectName("plainTextEdit_3")
-        """
-
-        self.label_Temp = QtWidgets.QLabel(self.centralwidget)
-        self.label_Temp.setGeometry(QtCore.QRect(120, 565, 131, 31))
-        self.label_Temp.setObjectName("Temperature")
-        
 
         
-        self.lcdNumber = QtWidgets.QLCDNumber(self.centralwidget)
-        self.lcdNumber.setGeometry(QtCore.QRect(300, 560, 161, 61))
-        self.lcdNumber.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.lcdNumber.setStyleSheet("color: rgb(255, 0, 0);")
-        self.lcdNumber.setInputMethodHints(QtCore.Qt.ImhNoEditMenu)
-        self.lcdNumber.setSegmentStyle(QtWidgets.QLCDNumber.Filled)
-        self.lcdNumber.setProperty("intValue", 0)
-        self.lcdNumber.setObjectName("lcdNumber")
-        """
-        self.pushButton_2 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_2.setGeometry(QtCore.QRect(250, 620, 106, 30))
-        self.pushButton_2.setLocale(QtCore.QLocale(QtCore.QLocale.Erzya, QtCore.QLocale.Russia))
-        self.pushButton_2.setAutoDefault(False)
-        self.pushButton_2.setDefault(False)
-        self.pushButton_2.setFlat(False)
-        self.pushButton_2.setObjectName("pushButton_2")
-        self.pushButton_3 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_3.setGeometry(QtCore.QRect(410, 620, 106, 30))
-        self.pushButton_3.setObjectName("pushButton_3")
-        
-        self.label_6 = QtWidgets.QLabel(self.centralwidget)
-        self.label_6.setGeometry(QtCore.QRect(750, 30, 661, 551))
-        self.label_6.setText("")
-        self.label_6.setPixmap(QtGui.QPixmap("../../../../../../Downloads/IRAS 16253 (1).png"))
-        self.label_6.setScaledContents(False)
-        self.label_6.setObjectName("label_6")
-        
-        self.pushButton_4 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_4.setGeometry(QtCore.QRect(560, 620, 91, 31))
-        self.pushButton_4.setObjectName("pushButton_4")
-        """
         self.tableWidget = QtWidgets.QTableWidget(self.centralwidget)
-        self.tableWidget.setGeometry(QtCore.QRect(377, 250, 275, 185))
+        self.tableWidget.setGeometry(QtCore.QRect(377, y+70*3, 275, 185))
         self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setColumnCount(2)
         self.tableWidget.setRowCount(3)
@@ -170,9 +123,26 @@ class Ui_MainWindow(object):
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(1, item)
         self.pushButton_5 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_5.setGeometry(QtCore.QRect(280, 450, 371, 41))
+        self.pushButton_5.setGeometry(QtCore.QRect(280, y+70*6, 371, 41))
         self.pushButton_5.setObjectName("pushButton_5")
         self.pushButton_5.setToolTip("Plot slit configuration over sky image")
+        
+        
+                
+
+        self.label_Temp = QtWidgets.QLabel(self.centralwidget)
+        self.label_Temp.setGeometry(QtCore.QRect(120, y+70*7, 131, 31))
+        self.label_Temp.setObjectName("Temperature")
+        
+        self.lcdNumber = QtWidgets.QLCDNumber(self.centralwidget)
+        self.lcdNumber.setGeometry(QtCore.QRect(300, y+70*7, 161, 61))
+        self.lcdNumber.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.lcdNumber.setStyleSheet("color: rgb(255, 0, 0);")
+        self.lcdNumber.setInputMethodHints(QtCore.Qt.ImhNoEditMenu)
+        self.lcdNumber.setSegmentStyle(QtWidgets.QLCDNumber.Filled)
+        self.lcdNumber.setProperty("intValue", 0)
+        self.lcdNumber.setObjectName("lcdNumber")
+        
         
         self.gridLayoutWidget = QtWidgets.QWidget(self.centralwidget)
         self.gridLayoutWidget.setGeometry(QtCore.QRect(750,50,661,661))
@@ -180,37 +150,26 @@ class Ui_MainWindow(object):
         self.gridLayout = QtWidgets.QGridLayout(self.gridLayoutWidget)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
         self.gridLayout.setObjectName("gridLayout")
-        #self.label_6.raise_()
-   #     self.pushButton.raise_()
         self.textEdit.raise_()
-#        self.textEdit_2.raise_()
- #       self.plainTextEdit.raise_()
         self.label.raise_()
         self.label_filename.raise_()
         self.label_2.raise_()
-     #   self.label_3.raise_()
-        #self.label_4.raise_()
+        self.coords_label.raise_()
+        self.coords.raise_()
         self.label_Temp.raise_()
-        #self.plainTextEdit_2.raise_()
-        #self.plainTextEdit_3.raise_()
         self.lcdNumber.raise_()
-        #self.pushButton_2.raise_()
-        #self.pushButton_3.raise_()
-        #self.pushButton_4.raise_()
         self.tableWidget.raise_()
         self.pushButton_5.raise_()
         self.gridLayoutWidget.raise_()
+        
         MainWindow.setCentralWidget(self.centralwidget)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
+
         
-###################### 
-             
-        #self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
-        #self.gridLayout = self.gridLayout
-        self.gridLayout.setObjectName("gridLayout")
-        
+
+        self.gridLayout.setObjectName("gridLayout")        
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.spacerItem = QtWidgets.QSpacerItem(40, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
@@ -223,24 +182,16 @@ class Ui_MainWindow(object):
         self.spacerItem1 = QtWidgets.QSpacerItem(40, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         self.verticalLayout.addItem(self.spacerItem1)
         self.gridLayout.addLayout(self.verticalLayout, 1, 0, 1, 1)
-        #self.gridLayout.addLayout(self.horizontalHeaderItem, 0.5, 0.5, 0.25, 0.25)
+
         
         
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         
         self.canv = MatplotlibCanvas(self)
-        #self.df = []
-		
         self.toolbar = Navi(self.canv,self.centralwidget)
         self.horizontalLayout.addWidget(self.toolbar)
         
-##########################
-        
-        #self.pushButton_2.clicked.connect(self.sum)
-        #self.pushButton_3.clicked.connect(self.multiply)
-        #self.pushButton_4.clicked.connect(self.plainTextEdit_2.clear)
-        #self.pushButton_4.clicked.connect(self.plainTextEdit_3.clear)
         self.pushButton_5.clicked.connect(self.plot_table)
         self.file_upload.clicked.connect(self.open_file)    
         
@@ -249,12 +200,10 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-#        self.pushButton.setText(_translate("MainWindow", "Sign Up"))
         self.label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Target name</span></p></body></html>"))
         self.label_filename.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">File name</span></p></body></html>"))
         self.label_2.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Slit Configurations <br> (Enter in arcsec) </span></p></body></html>"))
-  #      self.label_3.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Confirm Password</span></p></body></html>"))
-        #self.label_4.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">A</span></p><p><br/></p></body></html>"))
+        self.coords_label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Coordinates</span></p></body></html>"))
         self.label_Temp.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:black;\">Temperature</span></p><p><br/></p></body></html>"))
         #self.pushButton_2.setText(_translate("MainWindow", "SUM"))
         #self.pushButton_3.setText(_translate("MainWindow", "Multiply"))
@@ -265,7 +214,6 @@ class Ui_MainWindow(object):
         item.setText(_translate("MainWindow", "1"))
         item = self.tableWidget.verticalHeaderItem(2)
         item.setText(_translate("MainWindow", "2"))
-        
         item = self.tableWidget.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "Slit Width"))
         item = self.tableWidget.horizontalHeaderItem(1)
@@ -277,8 +225,6 @@ class Ui_MainWindow(object):
             self.filename = QtWidgets.QFileDialog.getOpenFileName(None, 'Open File', '*.fits')
             print(self.filename[0])
             self.textEdit_filename.setText(self.filename[0])
-
-
         
     def sum(self):
     
@@ -303,14 +249,33 @@ class Ui_MainWindow(object):
             
     def plot_table(self):
         try:
-            source = self.textEdit.text()
+            source_check = self.textEdit.text()
+            coord_check = self.coords.text()
+            if len(source_check)!=0:
+                source = self.textEdit.text()                           
+                coord = SkyCoord.from_name(source, frame = 'icrs')
+                print('Coordinates of the requested objects are: ',coord.ra, coord.dec)
+                
+            else:
+                coord_string = self.coords.text()
+                coord = SkyCoord(coord_string, frame="icrs")
+    
             file_name = self.textEdit_filename.text()
-            
-            coord = SkyCoord.from_name(source, frame = 'icrs')
-            print('Coordinates of the requested objects are: ',coord.ra, coord.dec)
     
             if file_name[-5:]==".fits":
                 hdu = fits.open(file_name)[0]
+                wcs = WCS(hdu.header)
+                
+            elif file_name[-5:]==".fits" and len(source_check)==0:
+                hdu = fits.open(file_name)[0]
+                wcs = WCS(hdu.header)
+                coord_string = self.coords.text()
+                coord = SkyCoord(coord_string, frame="icrs")
+                
+            elif len(source_check)==0 and len(coord_check)!=0 and len(file_name)==0:
+                paths = SkyView.get_images(position=coord, height=10*u.arcmin,  width=10*u.arcmin,
+                                        survey=['2MASS-K'])
+                hdu = paths[0][0]
                 wcs = WCS(hdu.header)
                 
             else:    
@@ -323,16 +288,7 @@ class Ui_MainWindow(object):
             stamp = Cutout2D(hdu.data, coord, size, wcs=wcs)
             #fig, ax = plt.subplots( subplot_kw={'projection': stamp.wcs}, dpi = 300)
             projection = stamp.wcs
-            """
-            x = []
-            y = []
-            for i in range(4):    
-                x.append(float(self.tableWidget.item(i, 0).text()))
-                y.append(float(self.tableWidget.item(i, 1).text()))
-            
-            print(x,y)
-            fg = plt.plot(x,y,'.')
-            """
+
             try:
                 self.horizontalLayout.removeWidget(self.toolbar)
                 self.verticalLayout.removeWidget(self.canv)
@@ -365,9 +321,7 @@ class Ui_MainWindow(object):
             sky_region = RectangleSkyRegion(coord_fov, width=fov_width *u.arcsec, height=9.1*u.arcmin)
             pixel_region = sky_region.to_pixel(stamp.wcs)
             artist = pixel_region.as_artist(color='gray', lw=2)            
-            ax.add_artist(artist)
-#            ax.text(0.1, 0.9, '', transform=ax.transAxes, c='lime', weight="bold")
-            
+            ax.add_artist(artist)         
 
             
             slit0_width = float(self.tableWidget.item(0, 0).text())
@@ -402,18 +356,11 @@ class Ui_MainWindow(object):
             ax.set_xlabel('RA')
             ax.set_ylabel('Dec')
             ax.set_title("2MASS Image (band Ks)")            
-            """
-            ax.plot(x,y,'o')
-            ax.set_xlabel('X axis')
-            ax.set_ylabel('Y axis')
-            ax.set_title("Matplotlib integration")
-            """
-            
-            #plt.legend(loc='best')
+
             self.canv.draw()
+
         except:
             print("Object not found")
-            
 
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
