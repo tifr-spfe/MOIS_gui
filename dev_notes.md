@@ -1,3 +1,8 @@
+11/10/2022 (Himanshu) **Updates in v0.6**: <br />
+1. Target list upload option added. <br />
+2. Full slit configuration added. <br />
+
+
 10/10/2022 (Himanshu) **Updates in v0.5**: <br />
 1. File upload button added. <br />
 2. Mannual coordinate input option added. <br/>
