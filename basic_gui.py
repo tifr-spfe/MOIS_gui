@@ -30,6 +30,8 @@ from matplotlib.figure import Figure
 from matplotlib.colors import LogNorm
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as Navi
 import sip
+import pandas as pd
+
 
 
 y = 70
@@ -46,7 +48,8 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1400, 800)
+     
+        MainWindow.resize(1480, 900)
         MainWindow.setFocusPolicy(QtCore.Qt.TabFocus)
         MainWindow.setStyleSheet("\n"
 "\n"
@@ -69,6 +72,16 @@ class Ui_MainWindow(object):
         self.textEdit.setToolTip("Enter simbad searchable name")
         
         
+        self.coords_label = QtWidgets.QLabel(self.centralwidget)
+        self.coords_label.setGeometry(QtCore.QRect(120, y+70*1, 131, 31))
+        self.coords_label.setObjectName("coords_label")
+        
+        
+        self.coords = QtWidgets.QLineEdit(self.centralwidget)
+        self.coords.setGeometry(QtCore.QRect(280, y+70*1, 371, 41))
+        self.coords.setObjectName("coords")
+        self.coords.setToolTip("Enter Coordinates (Optional, if Object name is given.)")
+        
         
         self.label_filename = QtWidgets.QLabel(self.centralwidget)
         self.label_filename.setGeometry(QtCore.QRect(120, y+70*2, 131, 31))
@@ -85,34 +98,43 @@ class Ui_MainWindow(object):
         self.file_upload.setObjectName("file_upload")
         self.file_upload.setToolTip("Upload a .fits file")
         
-
-        self.coords_label = QtWidgets.QLabel(self.centralwidget)
-        self.coords_label.setGeometry(QtCore.QRect(120, y+70*1, 131, 31))
-        self.coords_label.setObjectName("coords_label")
         
+        self.target_list_fname = QtWidgets.QLabel(self.centralwidget)
+        self.target_list_fname.setGeometry(QtCore.QRect(120, y+70*3, 131, 31))
+        self.target_list_fname.setObjectName("target_list_fname")
         
-        self.coords = QtWidgets.QLineEdit(self.centralwidget)
-        self.coords.setGeometry(QtCore.QRect(280, y+70*1, 371, 41))
-        self.coords.setObjectName("coords")
-        self.coords.setToolTip("Enter Coordinates (Optional, if Object name is given.)")
+        self.target_list = QtWidgets.QLineEdit(self.centralwidget)
+        self.target_list.setGeometry(QtCore.QRect(280, y+70*3, 250, 41))
+        self.target_list.setObjectName("target_list")
+        self.target_list.setToolTip("Displays Targets in FOV (optional)")
+        
+        self.load_targets = QtWidgets.QPushButton(self.centralwidget)
+        self.load_targets.setGeometry(QtCore.QRect(531, y+70*3, 120, 41))
+        self.load_targets.setIcon( QtGui.QIcon("csv.png"))
+        self.load_targets.setObjectName("load_targets")
+        self.load_targets.setToolTip("Load target list")  
         
 
         self.label_2 = QtWidgets.QLabel(self.centralwidget)
-        self.label_2.setGeometry(QtCore.QRect(120, y+70*3, 180, 120))
+        self.label_2.setGeometry(QtCore.QRect(120, y+70*4, 180, 120))
         self.label_2.setObjectName("label_2")
 
         
         self.tableWidget = QtWidgets.QTableWidget(self.centralwidget)
-        self.tableWidget.setGeometry(QtCore.QRect(377, y+70*3, 275, 185))
+        self.tableWidget.setGeometry(QtCore.QRect(377, y+70*4, 275, 225))
         self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setColumnCount(2)
-        self.tableWidget.setRowCount(3)
+        self.tableWidget.setRowCount(5)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setVerticalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setVerticalHeaderItem(1, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setVerticalHeaderItem(2, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setVerticalHeaderItem(3, item)
+        item = QtWidgets.QTableWidgetItem()
+        self.tableWidget.setVerticalHeaderItem(4, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
         self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -122,20 +144,23 @@ class Ui_MainWindow(object):
         self.tableWidget.setHorizontalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(1, item)
+
+
+
         self.pushButton_5 = QtWidgets.QPushButton(self.centralwidget)
-        self.pushButton_5.setGeometry(QtCore.QRect(280, y+70*6, 371, 41))
+        self.pushButton_5.setGeometry(QtCore.QRect(377, y+70*8, 275, 41))
         self.pushButton_5.setObjectName("pushButton_5")
         self.pushButton_5.setToolTip("Plot slit configuration over sky image")
         
-        
+      
                 
 
         self.label_Temp = QtWidgets.QLabel(self.centralwidget)
-        self.label_Temp.setGeometry(QtCore.QRect(120, y+70*7, 131, 31))
+        self.label_Temp.setGeometry(QtCore.QRect(120, y+70*9, 131, 31))
         self.label_Temp.setObjectName("Temperature")
         
         self.lcdNumber = QtWidgets.QLCDNumber(self.centralwidget)
-        self.lcdNumber.setGeometry(QtCore.QRect(300, y+70*7, 161, 61))
+        self.lcdNumber.setGeometry(QtCore.QRect(300, y+70*9, 161, 61))
         self.lcdNumber.setFocusPolicy(QtCore.Qt.NoFocus)
         self.lcdNumber.setStyleSheet("color: rgb(255, 0, 0);")
         self.lcdNumber.setInputMethodHints(QtCore.Qt.ImhNoEditMenu)
@@ -152,14 +177,19 @@ class Ui_MainWindow(object):
         self.gridLayout.setObjectName("gridLayout")
         self.textEdit.raise_()
         self.label.raise_()
+        self.coords_label.raise_()
         self.label_filename.raise_()
         self.label_2.raise_()
-        self.coords_label.raise_()
+        
+        
+        self.target_list_fname.raise_()
         self.coords.raise_()
         self.label_Temp.raise_()
         self.lcdNumber.raise_()
         self.tableWidget.raise_()
         self.pushButton_5.raise_()
+#        self.target_list.rasie()
+        self.load_targets.raise_()
         self.gridLayoutWidget.raise_()
         
         MainWindow.setCentralWidget(self.centralwidget)
@@ -194,16 +224,17 @@ class Ui_MainWindow(object):
         
         self.pushButton_5.clicked.connect(self.plot_table)
         self.file_upload.clicked.connect(self.open_file)    
-        
-
+        self.load_targets.clicked.connect(self.open_target)    
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Target name</span></p></body></html>"))
+        self.coords_label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Coordinates</span></p></body></html>"))
         self.label_filename.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">File name</span></p></body></html>"))
         self.label_2.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Slit Configurations <br> (Enter in arcsec) </span></p></body></html>"))
-        self.coords_label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Coordinates</span></p></body></html>"))
+        self.target_list_fname.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Target list</span></p></body></html>"))
+        
         self.label_Temp.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:black;\">Temperature</span></p><p><br/></p></body></html>"))
         #self.pushButton_2.setText(_translate("MainWindow", "SUM"))
         #self.pushButton_3.setText(_translate("MainWindow", "Multiply"))
@@ -214,11 +245,18 @@ class Ui_MainWindow(object):
         item.setText(_translate("MainWindow", "1"))
         item = self.tableWidget.verticalHeaderItem(2)
         item.setText(_translate("MainWindow", "2"))
+
+        item = self.tableWidget.verticalHeaderItem(3)
+        item.setText(_translate("MainWindow", "3"))
+        item = self.tableWidget.verticalHeaderItem(4)
+        item.setText(_translate("MainWindow", "4"))
+        
         item = self.tableWidget.horizontalHeaderItem(0)
         item.setText(_translate("MainWindow", "Slit Width"))
         item = self.tableWidget.horizontalHeaderItem(1)
         item.setText(_translate("MainWindow", "Offset"))
-        self.pushButton_5.setText(_translate("MainWindow", "Load Image"))
+        self.pushButton_5.setText(_translate("MainWindow", "Load FOV"))
+
 
 
     def open_file(self):
@@ -226,16 +264,10 @@ class Ui_MainWindow(object):
             print(self.filename[0])
             self.textEdit_filename.setText(self.filename[0])
         
-    def sum(self):
-    
-        a = self.plainTextEdit_2.toPlainText()
-        b = self.plainTextEdit_3.toPlainText()
-
-        try:
-            c = int(a)+int(b)
-            self.lcdNumber.display(c)
-        except:
-            print("Invalid Inputs")
+    def open_target(self):
+            self.filename = QtWidgets.QFileDialog.getOpenFileName(None, 'Open File', '*.csv')
+            print(self.filename[0])
+            self.target_list.setText(self.filename[0])
 
     def multiply(self):
         a = self.plainTextEdit_2.toPlainText()
@@ -248,7 +280,7 @@ class Ui_MainWindow(object):
             print("Invalid Inputs")
             
     def plot_table(self):
-        try:
+        
             source_check = self.textEdit.text()
             coord_check = self.coords.text()
             if len(source_check)!=0:
@@ -323,51 +355,41 @@ class Ui_MainWindow(object):
             artist = pixel_region.as_artist(color='gray', lw=2)            
             ax.add_artist(artist)         
 
+            c = ['r', 'tab:orange', 'yellow', 'lime', 'pink']
+            for i in range(5):
             
-            slit0_width = float(self.tableWidget.item(0, 0).text())
-            delta_x0 = float(self.tableWidget.item(0, 1).text())
-            coord_slit0 = SkyCoord(coord.ra+(delta_x0/3600)*u.deg, coord.dec+9.1/3*u.arcmin)                     
-            sky_region = RectangleSkyRegion(coord_slit0, width=slit0_width *u.arcsec, height=9.1/3*u.arcmin)
-            pixel_region = sky_region.to_pixel(stamp.wcs)
-            artist = pixel_region.as_artist(color='lime', lw=2)            
-            ax.add_artist(artist)
-            ax.text(0.1, 0.9, 'Slit 0', transform=ax.transAxes, c='lime', weight="bold")
-            
-            slit1_width = float(self.tableWidget.item(1, 0).text())
-            delta_x1 = float(self.tableWidget.item(1, 1).text())
-            coord_slit1 = SkyCoord(coord.ra+(delta_x1/3600)*u.deg, coord.dec)                     
-            sky_region = RectangleSkyRegion(coord_slit1, width=slit1_width *u.arcsec, height=9.1/3*u.arcmin)
-            pixel_region = sky_region.to_pixel(stamp.wcs)
-            artist = pixel_region.as_artist(color='red', lw=2)            
-            ax.add_artist(artist)
-            ax.text(0.1,0.85, 'Slit 1', transform=ax.transAxes, c='red', weight="bold")
-            #ax.scatter(coord.ra.value, coord.dec.value, transform=ax.get_transform('world'))
-
-            slit2_width = float(self.tableWidget.item(2, 0).text())
-            delta_x2 = float(self.tableWidget.item(2, 1).text())
-            coord_slit2 = SkyCoord(coord.ra+(delta_x2/3600)*u.deg, coord.dec-9.1/3*u.arcmin)                     
-            sky_region = RectangleSkyRegion(coord_slit2, width=slit2_width *u.arcsec, height=9.1/3*u.arcmin)
-            pixel_region = sky_region.to_pixel(stamp.wcs)
-            artist = pixel_region.as_artist(color='yellow', lw=2)            
-            ax.add_artist(artist)
-            ax.text(0.1, 0.8, 'Slit 2', transform=ax.transAxes, c='yellow', weight="bold")
+                slit0_width = float(self.tableWidget.item(0+i, 0).text())
+                delta_x0 = float(self.tableWidget.item(0+i, 1).text())
+                coord_slit0 = SkyCoord(coord.ra+(delta_x0/3600)*u.deg, coord.dec+9.1*(2-i)/5*u.arcmin)                     
+                sky_region = RectangleSkyRegion(coord_slit0, width=slit0_width *u.arcsec, height=9.1/5*u.arcmin)
+                pixel_region = sky_region.to_pixel(stamp.wcs)
+                artist = pixel_region.as_artist(color=c[i], lw=2)            
+                ax.add_artist(artist)
+                ax.text(0.1, 0.9-i*0.05, f'Slit {i}', transform=ax.transAxes, c=c[i],  weight="bold")
             
             ax.plot_coord(coord)
             ax.set_xlabel('RA')
             ax.set_ylabel('Dec')
             ax.set_title("2MASS Image (band Ks)")            
 
+
+            ax.scatter(coord.ra.value, coord.dec.value, transform=ax.get_transform('world'), marker='o', c='None', edgecolors='white', s=100)
+            
+
+            targetlist = self.target_list.text()
+
+            if len(targetlist)!=0:
+                    df = pd.read_csv(targetlist)
+                    x, y = df['RA'], df['Dec']
+                    ax.scatter(x,y, transform=ax.get_transform('world'), marker='o', c="None", edgecolors='w', s=100)
+
+
+            else:
+                    pass
+
             self.canv.draw()
 
-        except:
-            print("Object not found")
 
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Critical)
-            msg.setText("Error")
-            msg.setInformativeText('Object could not be found or slit configuration invalid')
-            msg.setWindowTitle("Error")
-            msg.exec_()
 
 
 
