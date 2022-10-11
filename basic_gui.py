@@ -280,7 +280,7 @@ class Ui_MainWindow(object):
             print("Invalid Inputs")
             
     def plot_table(self):
-        
+        try:
             source_check = self.textEdit.text()
             coord_check = self.coords.text()
             if len(source_check)!=0:
@@ -388,7 +388,17 @@ class Ui_MainWindow(object):
                     pass
 
             self.canv.draw()
+            
+        except:
+            print("Object not found")
 
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Error")
+            msg.setInformativeText('Object could not be found or slit configuration invalid')
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            
 
 
 
