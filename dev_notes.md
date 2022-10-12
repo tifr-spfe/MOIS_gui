@@ -1,3 +1,6 @@
+13/10/2022 (Himanshu) **Updates in v0.7**: <br />
+1. Plotting the image improved. <br />
+
 11/10/2022 (Himanshu) **Updates in v0.6**: <br />
 1. Target list upload option added. <br />
 2. Full slit configuration added. <br />
