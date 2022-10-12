@@ -11,8 +11,9 @@ Created on Thu Sep 29 00:09:39 2022
 
 
 
-
+from astropy import log
 from astropy.coordinates import Angle, SkyCoord
+from astropy.visualization import AsymmetricPercentileInterval
 from regions import RectangleSkyRegion
 from astropy.wcs import WCS
 from astropy.io import fits
@@ -24,6 +25,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 import sys
 from PyQt5.QtWidgets import QDialog, QApplication, QPushButton, QVBoxLayout, QHeaderView
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QObject, QThread, QTimer
 from matplotlib.backends.backend_qt5agg import FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 from matplotlib.figure import Figure
@@ -31,8 +33,18 @@ from matplotlib.colors import LogNorm
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as Navi
 import sip
 import pandas as pd
+from astropy.visualization.interval import (PercentileInterval,
+                                            AsymmetricPercentileInterval,
+                                            ManualInterval, MinMaxInterval)
+
+from astropy.visualization.stretch import (LinearStretch, SqrtStretch,
+                                           PowerStretch, LogStretch,
+                                           AsinhStretch)
+
+from astropy.visualization.mpl_normalize import ImageNormalize
 
 
+import threading
 
 y = 70
 
@@ -45,6 +57,43 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
 		super(MatplotlibCanvas,self).__init__(self.fig)
 		#self.fig.set_positions(0.2, 0.2, 0.8, 0.8) # left,bottom,width,height
         #fig.tight_layout()
+     
+
+
+
+
+def simple_norm(data, stretch='linear', power=1.0, asinh_a=0.1, log_a=1000,
+                min_cut=None, max_cut=None, min_percent=None, max_percent=None,
+                percent=None, clip=True):
+
+    if percent is not None:
+        interval = PercentileInterval(percent)
+    elif min_percent is not None or max_percent is not None:
+        interval = AsymmetricPercentileInterval(min_percent or 0.,
+                                                max_percent or 100.)
+    elif min_cut is not None or max_cut is not None:
+        interval = ManualInterval(min_cut, max_cut)
+    else:
+        interval = MinMaxInterval()
+
+    if stretch == 'linear':
+        stretch = LinearStretch()
+    elif stretch == 'sqrt':
+        stretch = SqrtStretch()
+    elif stretch == 'power':
+        stretch = PowerStretch(power)
+    elif stretch == 'log':
+        stretch = LogStretch(log_a)
+    elif stretch == 'asinh':
+        stretch = AsinhStretch(asinh_a)
+    else:
+        raise ValueError('Unknown stretch: {0}.'.format(stretch))
+
+    vmin, vmax = interval.get_limits(data)
+
+    return ImageNormalize(vmin=vmin, vmax=vmax, stretch=stretch, clip=clip)
+
+        
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
@@ -278,9 +327,11 @@ class Ui_MainWindow(object):
             self.lcdNumber.display(c)
         except:
             print("Invalid Inputs")
-            
-    def plot_table(self):
-        try:
+          
+    #@pyqtSlot()
+    def plot_table(self, vmin=None, vmid=None, vmax=None, pmin=0.25, pmax=99.75, 
+                   stretch='linear', exponent=2):
+        
             source_check = self.textEdit.text()
             coord_check = self.coords.text()
             if len(source_check)!=0:
@@ -316,7 +367,7 @@ class Ui_MainWindow(object):
                 hdu = paths[0][0]
                 wcs = WCS(hdu.header)
     
-            size = u.Quantity((20, 20), u.arcmin)
+            size = u.Quantity((10, 10), u.arcmin)
             stamp = Cutout2D(hdu.data, coord, size, wcs=wcs)
             #fig, ax = plt.subplots( subplot_kw={'projection': stamp.wcs}, dpi = 300)
             projection = stamp.wcs
@@ -343,7 +394,65 @@ class Ui_MainWindow(object):
             
             
             ax = self.canv.fig.add_subplot(111, projection=stamp.wcs)
-            ax.imshow(stamp.data, origin='lower', cmap="jet", norm=LogNorm()) 
+            
+            min_auto = vmin is None
+            max_auto = vmax is None
+    
+
+            if min_auto or max_auto:
+    
+                interval = AsymmetricPercentileInterval(pmin, pmax, n_samples=10000)
+                
+                try:
+                    vmin_auto, vmax_auto = interval.get_limits(stamp.data)
+                except (IndexError, TypeError):  # no valid values
+                    vmin_auto = vmax_auto = 0
+                    
+                vmin = vmin_auto          
+                vmax = vmax_auto    
+           
+                    
+            # Prepare normalizer object
+            if stretch == 'arcsinh':
+                stretch = 'asinh'
+    
+            if stretch == 'log':
+                if vmid is None:
+                    if vmin < 0:
+                        raise ValueError("When using a log stretch, if vmin < 0, then vmid has to be specified")
+                    else:
+                        vmid = 0.
+                if vmin < vmid:
+                    raise ValueError("When using a log stretch, vmin should be larger than vmid")
+                log_a = (vmax - vmid) / (vmin - vmid)
+                norm_kwargs = {'log_a': log_a}
+            elif stretch == 'asinh':
+                if vmid is None:
+                    vmid = vmin - (vmax - vmin) / 30.
+                asinh_a = (vmid - vmin) / (vmax - vmin)
+                norm_kwargs = {'asinh_a': asinh_a}
+            else:
+                norm_kwargs = {}
+    
+            normalizer = simple_norm(stamp.data, stretch=stretch, power=exponent,
+                                     min_cut=vmin, max_cut=vmax, clip=False,
+                                     **norm_kwargs)
+    
+            # Adjust vmin/vmax if auto
+            
+            if stretch == 'linear':
+                vmin = -0.1 * (vmax - vmin) + vmin
+            #log.info("Auto-setting vmin to %10.3e" % vmin)
+            if stretch == 'linear':
+                vmax = 0.1 * (vmax - vmin) + vmax
+            #log.info("Auto-setting vmax to %10.3e" % vmax)
+    
+            # Update normalizer object
+            normalizer.vmin = vmin
+            normalizer.vmax = vmax
+
+            ax.imshow(stamp.data, origin='lower', 
+                      cmap="gist_earth", norm=normalizer) 
             
             ## Slit configuration
 
@@ -352,7 +461,7 @@ class Ui_MainWindow(object):
             coord_fov = SkyCoord(coord.ra+(0/3600)*u.deg, coord.dec+(0)*u.arcsec)                     
             sky_region = RectangleSkyRegion(coord_fov, width=fov_width *u.arcsec, height=9.1*u.arcmin)
             pixel_region = sky_region.to_pixel(stamp.wcs)
-            artist = pixel_region.as_artist(color='gray', lw=2)            
+            artist = pixel_region.as_artist(color='gray', lw=1)            
             ax.add_artist(artist)         
 
             c = ['r', 'tab:orange', 'yellow', 'lime', 'pink']
@@ -363,7 +472,7 @@ class Ui_MainWindow(object):
                 coord_slit0 = SkyCoord(coord.ra+(delta_x0/3600)*u.deg, coord.dec+9.1*(2-i)/5*u.arcmin)                     
                 sky_region = RectangleSkyRegion(coord_slit0, width=slit0_width *u.arcsec, height=9.1/5*u.arcmin)
                 pixel_region = sky_region.to_pixel(stamp.wcs)
-                artist = pixel_region.as_artist(color=c[i], lw=2)            
+                artist = pixel_region.as_artist(color=c[i], lw=1)            
                 ax.add_artist(artist)
                 ax.text(0.1, 0.9-i*0.05, f'Slit {i}', transform=ax.transAxes, c=c[i],  weight="bold")
             
@@ -389,19 +498,13 @@ class Ui_MainWindow(object):
 
             self.canv.draw()
             
-        except:
-            print("Object not found")
-
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Critical)
-            msg.setText("Error")
-            msg.setInformativeText('Object could not be found or slit configuration invalid')
-            msg.setWindowTitle("Error")
-            msg.exec_()
-            
-
-
-
+        
+        
+        
+    def worker(self):
+        run_thread = threading.Thread(target = self.plot_table)
+        run_thread.start()
+        
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
