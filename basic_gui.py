@@ -56,9 +56,7 @@ class MatplotlibCanvas(FigureCanvasQTAgg):
 
 		super(MatplotlibCanvas,self).__init__(self.fig)
 		#self.fig.set_positions(0.2, 0.2, 0.8, 0.8) # left,bottom,width,height
-        #fig.tight_layout()
-     
-
+	#fig.tight_layout()    
 
 
 
@@ -93,17 +91,16 @@ def simple_norm(data, stretch='linear', power=1.0, asinh_a=0.1, log_a=1000,
 
     return ImageNormalize(vmin=vmin, vmax=vmax, stretch=stretch, clip=clip)
 
-        
+
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-     
         MainWindow.resize(1480, 900)
         MainWindow.setFocusPolicy(QtCore.Qt.TabFocus)
         MainWindow.setStyleSheet("\n"
-"\n"
-"background-color: rgb(255,255,255);\n"
-"font: 14pt \"Times\";")
+                                 "\n"
+                                 "background-color: rgb(255,255,255);\n"
+                                 "font: 14pt \"Times\";")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         """
@@ -331,17 +328,25 @@ class Ui_MainWindow(object):
     #@pyqtSlot()
     def plot_table(self, vmin=None, vmid=None, vmax=None, pmin=0.25, pmax=99.75, 
                    stretch='linear', exponent=2):
-        
+        try:
             source_check = self.textEdit.text()
             coord_check = self.coords.text()
-            if len(source_check)!=0:
+            
+            if len(coord_check)!=0:
+                coord_string = self.coords.text()
+                try:
+                    coord = SkyCoord(coord_string, frame="icrs")
+                    
+                except:
+                    coord = SkyCoord(coord_string, frame="icrs", unit=(u.hourangle, u.deg))
+                    
+                
+                
+                
+            else:
                 source = self.textEdit.text()                           
                 coord = SkyCoord.from_name(source, frame = 'icrs')
                 print('Coordinates of the requested objects are: ',coord.ra, coord.dec)
-                
-            else:
-                coord_string = self.coords.text()
-                coord = SkyCoord(coord_string, frame="icrs")
     
             file_name = self.textEdit_filename.text()
     
@@ -366,11 +371,13 @@ class Ui_MainWindow(object):
                                         survey=['2MASS-K'])
                 hdu = paths[0][0]
                 wcs = WCS(hdu.header)
-    
+
+            """
             size = u.Quantity((10, 10), u.arcmin)
             stamp = Cutout2D(hdu.data, coord, size, wcs=wcs)
-            #fig, ax = plt.subplots( subplot_kw={'projection': stamp.wcs}, dpi = 300)
-            projection = stamp.wcs
+            # fig, ax = plt.subplots( subplot_kw={'projection': stamp.wcs}, dpi = 300)
+            """
+            
 
             try:
                 self.horizontalLayout.removeWidget(self.toolbar)
@@ -384,38 +391,34 @@ class Ui_MainWindow(object):
             except Exception as e:
                 print(e)
                 pass
-            #self.label_6.pixmap(QtGui.QPixmap(fg))
+            # self.label_6.pixmap(QtGui.QPixmap(fg))
             self.canv = MatplotlibCanvas(self)
             self.toolbar = Navi(self.canv,self.centralwidget)
             self.horizontalLayout.addWidget(self.toolbar)
             self.verticalLayout.addWidget(self.canv)
-            #self.canv.axes.cla()
+            # self.canv.axes.cla()
             self.canv.fig
-            
-            
-            ax = self.canv.fig.add_subplot(111, projection=stamp.wcs)
-            
+
+            ax = self.canv.fig.add_subplot(111, projection=wcs)
             min_auto = vmin is None
             max_auto = vmax is None
-    
 
             if min_auto or max_auto:
-    
-                interval = AsymmetricPercentileInterval(pmin, pmax, n_samples=10000)
-                
+                interval = AsymmetricPercentileInterval(pmin, pmax,
+                                                        n_samples=10000)
+
                 try:
-                    vmin_auto, vmax_auto = interval.get_limits(stamp.data)
+                    vmin_auto, vmax_auto = interval.get_limits(hdu.data)
                 except (IndexError, TypeError):  # no valid values
                     vmin_auto = vmax_auto = 0
-                    
-                vmin = vmin_auto          
-                vmax = vmax_auto    
-           
-                    
+
+                vmin = vmin_auto
+                vmax = vmax_auto
+
             # Prepare normalizer object
             if stretch == 'arcsinh':
                 stretch = 'asinh'
-    
+
             if stretch == 'log':
                 if vmid is None:
                     if vmin < 0:
@@ -433,78 +436,100 @@ class Ui_MainWindow(object):
                 norm_kwargs = {'asinh_a': asinh_a}
             else:
                 norm_kwargs = {}
-    
-            normalizer = simple_norm(stamp.data, stretch=stretch, power=exponent,
+
+            normalizer = simple_norm(hdu.data, stretch=stretch, power=exponent,
                                      min_cut=vmin, max_cut=vmax, clip=False,
                                      **norm_kwargs)
-    
+
             # Adjust vmin/vmax if auto
-            
             if stretch == 'linear':
                 vmin = -0.1 * (vmax - vmin) + vmin
-            #log.info("Auto-setting vmin to %10.3e" % vmin)
+            # log.info("Auto-setting vmin to %10.3e" % vmin)
             if stretch == 'linear':
                 vmax = 0.1 * (vmax - vmin) + vmax
-            #log.info("Auto-setting vmax to %10.3e" % vmax)
-    
+            # log.info("Auto-setting vmax to %10.3e" % vmax)
             # Update normalizer object
             normalizer.vmin = vmin
             normalizer.vmax = vmax
 
-            ax.imshow(stamp.data, origin='lower', 
-                      cmap="gist_earth", norm=normalizer) 
-            
-            ## Slit configuration
+            ax.imshow(hdu.data, origin='lower',
+                      cmap="gist_earth", norm=normalizer)
+            # Slit configuration
 
-            fov_width = 3.1*60 ## in arcsec
-            delta_fov = 9.1*60 ## in arcsec
-            coord_fov = SkyCoord(coord.ra+(0/3600)*u.deg, coord.dec+(0)*u.arcsec)                     
-            sky_region = RectangleSkyRegion(coord_fov, width=fov_width *u.arcsec, height=9.1*u.arcmin)
-            pixel_region = sky_region.to_pixel(stamp.wcs)
-            artist = pixel_region.as_artist(color='gray', lw=1)            
-            ax.add_artist(artist)         
+            fov_width = 3.1*60  # in arcsec
+            delta_fov = 9.1  # in arcmin
+            coord_fov = SkyCoord(coord.ra+(0/3600)*u.deg,
+                                 coord.dec+(0)*u.arcsec)
+            sky_region = RectangleSkyRegion(coord_fov,
+                                            width=fov_width*u.arcsec,
+                                            height=delta_fov*u.arcmin)
+            pixel_region = sky_region.to_pixel(wcs)
+            artist = pixel_region.as_artist(color='white', lw=1)
+            ax.add_artist(artist)
 
             c = ['r', 'tab:orange', 'yellow', 'lime', 'pink']
-            for i in range(5):
+            slit_fov_check = []
             
+            for i in range(5):
                 slit0_width = float(self.tableWidget.item(0+i, 0).text())
                 delta_x0 = float(self.tableWidget.item(0+i, 1).text())
-                coord_slit0 = SkyCoord(coord.ra+(delta_x0/3600)*u.deg, coord.dec+9.1*(2-i)/5*u.arcmin)                     
-                sky_region = RectangleSkyRegion(coord_slit0, width=slit0_width *u.arcsec, height=9.1/5*u.arcmin)
-                pixel_region = sky_region.to_pixel(stamp.wcs)
-                artist = pixel_region.as_artist(color=c[i], lw=1)            
+                coord_slit0 = SkyCoord(coord.ra+(delta_x0/3600)*u.deg,
+                                       coord.dec+9.1*(2-i)/5*u.arcmin)
+                sky_region = RectangleSkyRegion(coord_slit0,
+                                                width=slit0_width*u.arcsec,
+                                                height=9.1/5*u.arcmin)
+                pixel_region = sky_region.to_pixel(wcs)
+                artist = pixel_region.as_artist(color=c[i], lw=1)
                 ax.add_artist(artist)
-                ax.text(0.1, 0.9-i*0.05, f'Slit {i}', transform=ax.transAxes, c=c[i],  weight="bold")
+                ax.text(0.1, 0.9-i*0.05, f'Slit {i}', transform=ax.transAxes,
+                        c=c[i],  weight="bold")
+                if abs(delta_x0) > fov_width/2:
+                    slit_fov_check.append(delta_x0)
             
+            
+            if len(slit_fov_check) > 0:
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText("Slit Out of FOV")
+                msg.setInformativeText('Atleast one slit is out of FOV')
+                msg.setWindowTitle("Error")
+                msg.exec_()
+
             ax.plot_coord(coord)
             ax.set_xlabel('RA')
             ax.set_ylabel('Dec')
-            ax.set_title("2MASS Image (band Ks)")            
-
-
-            ax.scatter(coord.ra.value, coord.dec.value, transform=ax.get_transform('world'), marker='o', c='None', edgecolors='white', s=100)
-            
+            ax.set_title("2MASS Image (band Ks)")
+            ax.scatter(coord.ra.value, coord.dec.value,
+                       transform=ax.get_transform('world'), marker='o',
+                       c='None', edgecolors='white', s=100)
 
             targetlist = self.target_list.text()
 
-            if len(targetlist)!=0:
-                    df = pd.read_csv(targetlist)
-                    x, y = df['RA'], df['Dec']
-                    ax.scatter(x,y, transform=ax.get_transform('world'), marker='o', c="None", edgecolors='w', s=100)
-
+            if len(targetlist) != 0:
+                df = pd.read_csv(targetlist)
+                x, y = df['RA'], df['Dec']
+                ax.scatter(x, y, transform=ax.get_transform('world'),
+                           marker='o', c="None", edgecolors='w', s=100)
 
             else:
-                    pass
+                pass
 
             self.canv.draw()
             
-        
-        
-        
+        except:
+            print("Object not found")
+
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Error")
+            msg.setInformativeText('Object could not be found or slit configuration invalid')
+            msg.setWindowTitle("Error")
+            msg.exec_()
+
     def worker(self):
-        run_thread = threading.Thread(target = self.plot_table)
+        run_thread = threading.Thread(target=self.plot_table)
         run_thread.start()
-        
+
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
