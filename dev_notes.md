@@ -1,3 +1,6 @@
+12/03/2022 (Himanshu) **To do**: <br />
+1. PySimpleguiqt is a good option. May be try that to create gyi. <br />
+
 13/10/2022 (Himanshu) **Updates in v0.7**: <br />
 1. Plotting the image improved. <br />
 
