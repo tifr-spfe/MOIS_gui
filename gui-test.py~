@@ -1,0 +1,81 @@
+from tkinter import *
+#from tkinter import ttk
+class MyWindow:
+    def __init__(self, win):
+        self.lbl1=Label(win, text='First number')
+        self.lbl2=Label(win, text='Second number')
+        self.lbl3=Label(win, text='Result')
+        self.t1=Entry(bd=3)
+        self.t2=Entry()
+        self.t3=Entry()
+        self.btn1 = Button(win, text='Add')
+        self.btn2=Button(win, text='Subtract')
+        self.lbl1.place(x=100, y=50)
+        self.t1.place(x=200, y=50)
+        self.lbl2.place(x=100, y=100)
+        self.t2.place(x=200, y=100)
+        self.b1=Button(win, text='Add', command=self.add)
+        self.b2=Button(win, text='Subtract')
+        self.b2.bind('<Button-1>', self.sub)
+        self.b1.place(x=100, y=150)
+        self.b2.place(x=200, y=150)
+        self.lbl3.place(x=100, y=200)
+        self.t3.place(x=200, y=200)
+     
+        self.menu=Menu(win)
+        win.config(menu=self.menu)
+        self.filemenu=Menu(self.menu)
+        self.menu.add_cascade(label='File', menu=self.filemenu)
+        self.filemenu.add_command(label='New')
+        self.filemenu.add_command(label='Open...')
+        self.filemenu.add_separator()
+        self.filemenu.add_command(label='Exit', command=win.quit)
+        self.helpmenu = Menu(self.menu)
+        self.menu.add_cascade(label='Help', menu=self.helpmenu)
+        self.helpmenu.add_command(label='About')
+        
+        self.button = Button(win, text='Exit', width=20, command=win.destroy)
+        self.button.place(x=200, y=350)
+
+
+        self.my_var=5
+        self.rb1 = Radiobutton(win, text='5', variable=self.my_var, value=5,command=self.selected)
+        self.rb2 = Radiobutton(win, text='10', variable=self.my_var, value=10,command=self.selected)
+        self.rb3 = Radiobutton(win, text='15', variable=self.my_var, value=15,command=self.selected)
+
+        self.rb1.place(x=190, y=300)
+
+    def selected(self):
+        if self.my_var.get()==5:
+            print("do something 1")
+        elif self.my_var.get()==10:
+            print("do something 2")
+        else:
+            print("do something 3")
+
+        
+    def add(self):
+        self.t3.delete(0, 'end')
+        num1=int(self.t1.get())
+        num2=int(self.t2.get())
+        result=num1+num2
+        self.t3.insert(END, str(result))
+    def sub(self, event):
+        self.t3.delete(0, 'end')
+        num1=int(self.t1.get())
+        num2=int(self.t2.get())
+        result=num1-num2
+        self.t3.insert(END, str(result))
+
+
+window=Tk()
+mywin=MyWindow(window)
+
+
+
+#button.pack()
+
+window.title('Test GUI')
+window.geometry("400x400+10+10")
+window.configure(bg='blue')
+window.mainloop()

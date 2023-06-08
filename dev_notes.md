@@ -1,3 +1,7 @@
+02/11/2022 (Himanshu) **bugs to fix in v0.7**: <br />
+1. Fix rotation errors while uploading target list <br />
+2. Try WCS transformation when rotating the FOV
+
 13/10/2022 (Himanshu) **Updates in v0.7**: <br />
 1. Plotting the image improved. <br />
 
