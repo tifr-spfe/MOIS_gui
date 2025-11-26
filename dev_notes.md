@@ -1,3 +1,6 @@
+26/11/2025 (Himanshu) **Many updates**
+1. Now at v0.8
+
 02/11/2022 (Himanshu) **bugs to fix in v0.7**: <br />
 1. Fix rotation errors while uploading target list <br />
 2. Try WCS transformation when rotating the FOV
