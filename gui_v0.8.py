@@ -18,6 +18,8 @@ from astropy.wcs import WCS
 from astropy.io import fits
 import matplotlib.pyplot as plt
 from astroquery.skyview import SkyView
+SkyView.clear_cache()
+
 import astropy.units as u
 from astropy.nddata import Cutout2D
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -33,7 +35,7 @@ from matplotlib.patches import Rectangle
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as Navi
 import sip
 import pandas as pd
-from scipy import ndimage, misc
+from scipy import ndimage
 from astropy.visualization.interval import (PercentileInterval,
                                             AsymmetricPercentileInterval,
                                             ManualInterval, MinMaxInterval)
@@ -43,7 +45,7 @@ from astropy.visualization.stretch import (LinearStretch, SqrtStretch,
                                            AsinhStretch)
 
 from astropy.visualization.mpl_normalize import ImageNormalize
-import threading
+# import threading
 import numpy as np
 #%%
 y = 70
@@ -175,7 +177,7 @@ class Ui_MainWindow(object):
         
         
         self.field_rotation = QtWidgets.QLabel(self.tab_3)
-        self.field_rotation.setGeometry(QtCore.QRect(120, y+70*2, 131, 31))
+        self.field_rotation.setGeometry(QtCore.QRect(120, y+70*2, 141, 31))
         self.field_rotation.setObjectName("field_rotation_value")
         
         
@@ -217,7 +219,7 @@ class Ui_MainWindow(object):
 
         
         self.tableWidget = QtWidgets.QTableWidget(self.tab_3)
-        self.tableWidget.setGeometry(QtCore.QRect(377, y+70*5, 275, 225))
+        self.tableWidget.setGeometry(QtCore.QRect(377, y+70*5, 275, 275))
         self.tableWidget.setObjectName("tableWidget")
         self.tableWidget.setColumnCount(2)
         self.tableWidget.setRowCount(5)
@@ -242,22 +244,46 @@ class Ui_MainWindow(object):
         self.tableWidget.setHorizontalHeaderItem(1, item)
 
         self.pushButton_5 = QtWidgets.QPushButton(self.tab_3)
-        self.pushButton_5.setGeometry(QtCore.QRect(377, y+580, 275, 41))
+        self.pushButton_5.setGeometry(QtCore.QRect(377, y+580+50, 275, 41))
         self.pushButton_5.setObjectName("pushButton_5")
         self.pushButton_5.setToolTip("Plot slit configuration over sky image")
+
+        # Cancel button for SkyView download (disabled by default)
+        self.cancel_button = QtWidgets.QPushButton(self.tab_3)
+        self.cancel_button.setGeometry(QtCore.QRect(377, y+70*9+50, 120, 41))
+        self.cancel_button.setObjectName("cancel_button")
+        self.cancel_button.setToolTip("Cancel SkyView download")
+        self.cancel_button.setText("Cancel")
+        self.cancel_button.setEnabled(False)
+        self.cancel_button.clicked.connect(self.cancel_skyview)
+
+        # Button to import slit settings (arcsec -> mm) to Engineers tab
+        self.import_to_eng = QtWidgets.QPushButton(self.tab_3)
+        self.import_to_eng.setGeometry(QtCore.QRect(500, y+70*9+50, 272-120, 41*2))
+        self.import_to_eng.setObjectName("import_to_eng")
+        self.import_to_eng.setToolTip("Export slit settings to Observations (convert arcsec -> mm)")
+        self.import_to_eng.setText("Export to\nObservations")
+        # Connect to MainWindow.import_slits_to_eng at runtime (MainWindow defines the handler)
+        self.import_to_eng.clicked.connect(self.import_slits_to_eng)
+
+        # Add loading animation label (make it a child of centralwidget)
+        self.loading_label = QtWidgets.QLabel(self.centralwidget)
+        self.loading_label.setGeometry(QtCore.QRect(900, y+70*2+50, 150, 150))  # Adjust as needed
+        self.loading_label.setVisible(False)
+        self.loading_label.setAttribute(QtCore.Qt.WA_TranslucentBackground, True)
         
         
         self.label_Temp = QtWidgets.QLabel(self.tab_3)
-        self.label_Temp.setGeometry(QtCore.QRect(120, y+70*10, 131, 31))
+        self.label_Temp.setGeometry(QtCore.QRect(120, y+70*10+50, 131, 31))
         self.label_Temp.setObjectName("Temperature")
         
         self.lcdNumber = QtWidgets.QLCDNumber(self.tab_3)
-        self.lcdNumber.setGeometry(QtCore.QRect(300, y+70*10, 161, 61))
+        self.lcdNumber.setGeometry(QtCore.QRect(300, y+70*10+50, 161, 61))
         self.lcdNumber.setFocusPolicy(QtCore.Qt.NoFocus)
         self.lcdNumber.setStyleSheet("color: rgb(255, 0, 0);")
         self.lcdNumber.setInputMethodHints(QtCore.Qt.ImhNoEditMenu)
         self.lcdNumber.setSegmentStyle(QtWidgets.QLCDNumber.Filled)
-        self.lcdNumber.setProperty("intValue", 0)
+        self.lcdNumber.setProperty("intValue", 120)
         self.lcdNumber.setObjectName("lcdNumber")
         
         
@@ -277,14 +303,16 @@ class Ui_MainWindow(object):
         self.gridLayout.setObjectName("gridLayout")        
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.spacerItem = QtWidgets.QSpacerItem(40, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        self.spacerItem = QtWidgets.QSpacerItem(40, 40, QtWidgets.QSizePolicy.Minimum, 
+                                                QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(self.spacerItem)
         self.gridLayout.addLayout(self.horizontalLayout, 0, 0, 1, 1)
         
         
         self.verticalLayout = QtWidgets.QVBoxLayout()
         self.verticalLayout.setObjectName("verticalLayout")
-        self.spacerItem1 = QtWidgets.QSpacerItem(40, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        self.spacerItem1 = QtWidgets.QSpacerItem(40, 40, QtWidgets.QSizePolicy.Minimum, 
+                                                 QtWidgets.QSizePolicy.Minimum)
         self.verticalLayout.addItem(self.spacerItem1)
         self.gridLayout.addLayout(self.verticalLayout, 1, 0, 1, 1)
 
@@ -299,11 +327,12 @@ class Ui_MainWindow(object):
 
         self.tabWidget.addTab(self.tab_3, "")
 
+
         ########   TAB ENG  #########################################################
         self.tab_4 = QtWidgets.QWidget()
         
         self.eng_ser_portno_fname = QtWidgets.QLabel(self.tab_4)
-        self.eng_ser_portno_fname.setGeometry(QtCore.QRect(120, y+70*2, 151, 31))
+        self.eng_ser_portno_fname.setGeometry(QtCore.QRect(120, y+70*2, 151, 41))
         self.eng_ser_portno_fname.setObjectName("Serial port ID")
         
         self.eng_ser_port_no = QtWidgets.QLineEdit(self.tab_4)
@@ -312,7 +341,7 @@ class Ui_MainWindow(object):
         
         
         self.eng_ser_port_fname = QtWidgets.QLabel(self.tab_4)
-        self.eng_ser_port_fname.setGeometry(QtCore.QRect(120, y+70*3, 151, 31))
+        self.eng_ser_port_fname.setGeometry(QtCore.QRect(120, y+70*3, 170, 41))
         self.eng_ser_port_fname.setObjectName("Serial port input")
         
         self.eng_ser_port = QtWidgets.QLineEdit(self.tab_4)
@@ -334,7 +363,7 @@ class Ui_MainWindow(object):
 
         
         self.eng_tableWidget = QtWidgets.QTableWidget(self.tab_4)
-        self.eng_tableWidget.setGeometry(QtCore.QRect(377, y+70*4, 275, 225))
+        self.eng_tableWidget.setGeometry(QtCore.QRect(377, y+70*4, 275, 275))
         self.eng_tableWidget.setObjectName("tableWidget")
         self.eng_tableWidget.setColumnCount(2)
         self.eng_tableWidget.setRowCount(5)
@@ -425,7 +454,7 @@ class Ui_MainWindow(object):
         
         self.label_Temp.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:black;\">Temperature</span></p><p><br/></p></body></html>"))
         
-        self.field_rotation.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Field Rotation</span></p></body></html>"))
+        self.field_rotation.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">FOV Rotation</span></p></body></html>"))
 
         item = self.tableWidget.verticalHeaderItem(0)
         item.setText(_translate("MainWindow", "0"))
@@ -474,8 +503,8 @@ class Ui_MainWindow(object):
         self.eng_pushButton_5.setText(_translate("MainWindow", "Configure Slit"))
                
         #########################################
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Astronomers"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("MainWindow", "Engineers"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Planning Tool"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("MainWindow", "Observation Setup"))
         
         
 
@@ -504,6 +533,9 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
              msg.setInformativeText(f"<html><head/><body><p><span style=\" color:black;\"> There is some issue in serial port communication.<br> Please try giving it permissions.<br> Use `sudo chmod o+rw /dev/ttyUSB*`</span></p><p><br/></p></body></html>")
              msg.setWindowTitle("Error")
              msg.exec_()
+
+        self.loading_movie = QtGui.QMovie("././astro-loading.gif")
+        self.loading_label.setMovie(self.loading_movie)
 
 
     def open_file(self):
@@ -550,9 +582,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     
     
             if len(file_name) != 0:
-                hdu = fits.open(file_name)
                 
-                if len(hdu)==0:
+                hdu = fits.open(file_name)
+
+                if len(hdu)==1:
                         hdu = fits.open(file_name)[0]
                 else:
                         hdu = fits.open(file_name)[1]
@@ -564,7 +597,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
                 hdu = fits.open(file_name)
 
-                if len(hdu)==0:
+                if len(hdu)==1:
                         hdu = fits.open(file_name)[0]
                 else:
                         hdu = fits.open(file_name)[1]
@@ -578,14 +611,80 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 if len(coord_check) != 0:
                     position = coord
                 else:
-                    position = source
+                    source = self.textEdit.text()                           
+                    coord = SkyCoord.from_name(source, frame = 'icrs')
+                    print('Coordinates of the requested objects are: ',coord.ra, coord.dec)
+                    position = coord #source
                 self.pushButton_5.setEnabled(False)
                 self.statusbar.showMessage("Downloading image from SkyView...")
+                self.loading_label.setVisible(True)
+                self.loading_label.raise_()
+                self.loading_movie.start()
+                self.cancel_button.setEnabled(True)
+                QtWidgets.QApplication.processEvents()
                 self.skyview_worker = SkyViewWorker(position, 14*u.arcmin, 14*u.arcmin, ['2MASS-K'])
                 self.skyview_worker.finished.connect(self.on_skyview_downloaded)
                 self.skyview_worker.start()
                 return
+            # print("In Main plot func: ",hdu, hdu.data)
+            self._plot_with_hdu_wcs(hdu, wcs, coord, vmin, vmid, vmax, pmin, pmax, stretch, exponent)
 
+
+            
+        except:
+            print("Object not found")
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Error")
+            msg.setInformativeText('Object could not be found or slit configuration invalid')
+            msg.setWindowTitle("Error")
+            msg.exec_()
+    
+    def on_skyview_downloaded(self, hdu, wcs):
+        self.loading_movie.stop()
+        self.loading_label.setVisible(False)
+        # Ensure cancel control state updated
+        try:
+            self.cancel_button.setEnabled(False)
+        except Exception:
+            pass
+        QtWidgets.QApplication.processEvents()
+        self.pushButton_5.setEnabled(True)
+        self.statusbar.clearMessage()
+        # if hdu is None or wcs is None:
+        #     msg = QMessageBox()
+        #     msg.setIcon(QMessageBox.Critical)
+        #     msg.setText("Download Error")
+        #     msg.setInformativeText('Failed to download image from SkyView')
+        #     msg.setWindowTitle("Error")
+        #     msg.exec_()
+        #     return 
+        if hdu is None or wcs is None:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Download Error")
+            msg.setInformativeText('Failed to download image from SkyView')
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            return
+
+        # Get coordinates from input fields
+        coord_check = self.coords.text()
+        if len(coord_check) != 0:
+            try:
+                coord = SkyCoord(coord_check, frame="icrs")
+            except:
+                coord = SkyCoord(coord_check, frame="icrs", unit=(u.hourangle, u.deg))
+        else:
+            source = self.textEdit.text()
+            coord = SkyCoord.from_name(source, frame='icrs')
+
+        self._plot_with_hdu_wcs(hdu, wcs, coord)
+    
+    def _plot_with_hdu_wcs(self, hdu, wcs, coord, vmin=None, vmid=None, vmax=None, pmin=0.25, pmax=99.75, 
+                        stretch='linear', exponent=2):
+        # try:
+            # Remove old canvas and toolbar if they exist
             try:
                 self.horizontalLayout.removeWidget(self.toolbar)
                 self.verticalLayout.removeWidget(self.canv)
@@ -594,30 +693,25 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.toolbar = None         
                 self.canv = None
                 self.verticalLayout.removeItem(self.spacerItem1)
-                
             except Exception as e:
                 print(e)
                 pass
 
             self.canv = MatplotlibCanvas(self)
-            self.toolbar = Navi(self.canv,self.tab_3)
+            self.toolbar = Navi(self.canv, self.tab_3)
             self.horizontalLayout.addWidget(self.toolbar)
             self.verticalLayout.addWidget(self.canv)
-            self.canv.fig
-            ax = self.canv.fig.add_subplot(111,)
-            
+            ax = self.canv.fig.add_subplot(111)
+
             min_auto = vmin is None
             max_auto = vmax is None
 
             if min_auto or max_auto:
-                interval = AsymmetricPercentileInterval(pmin, pmax,
-                                                        n_samples=10000)
-
+                interval = AsymmetricPercentileInterval(pmin, pmax, n_samples=10000)
                 try:
                     vmin_auto, vmax_auto = interval.get_limits(hdu.data)
-                except (IndexError, TypeError):  # no valid values
+                except (IndexError, TypeError):
                     vmin_auto = vmax_auto = 0
-
                 vmin = vmin_auto
                 vmax = vmax_auto
 
@@ -644,20 +738,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 norm_kwargs = {}
 
             normalizer = simple_norm(hdu.data, stretch=stretch, power=exponent,
-                                     min_cut=vmin, max_cut=vmax, clip=False,
-                                     **norm_kwargs)
+                                        min_cut=vmin, max_cut=vmax, clip=False,
+                                        **norm_kwargs)
 
             # Adjust vmin/vmax if auto
             if stretch == 'linear':
                 vmin = -0.1 * (vmax - vmin) + vmin
-            # log.info("Auto-setting vmin to %10.3e" % vmin)
-            if stretch == 'linear':
                 vmax = 0.1 * (vmax - vmin) + vmax
-            # log.info("Auto-setting vmax to %10.3e" % vmax)
-            # Update normalizer object
             normalizer.vmin = vmin
             normalizer.vmax = vmax
-
 
             targetlist = self.target_list.text()
 
@@ -666,113 +755,110 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 x, y = df['RA'], df['Dec']
                 target_coords = SkyCoord(x, y, unit='deg')
                 x, y = wcs.world_to_pixel(target_coords)
-
             else:
-                pass
+                x = y = None
 
-
-            if len(self.field_rotation_value.text()) != 0 and len(targetlist) != 0:
-                image_rotation = float(self.field_rotation_value.text())    #in degrees
-                rotated_array, (x1, y1) = ndimage.rotate(hdu.data, np.array([x, y].T), image_rotation, reshape=False)
-
-            elif len(self.field_rotation_value.text()) != 0 and len(targetlist) == 0:
-                image_rotation = float(self.field_rotation_value.text())    #in degrees
-                rotated_array  = ndimage.rotate(hdu.data, image_rotation, reshape=False)
-                
+            # Determine rotation angle
+            if len(self.field_rotation_value.text()) != 0:
+                image_rotation = float(self.field_rotation_value.text())  # in degrees
             else:
                 image_rotation = 0
-                rotated_array = ndimage.rotate(hdu.data, image_rotation, reshape=False)
+
+            data = hdu.data
+            if np.isnan(data).any():
+                # Replace NaNs with median or 0
+                data = np.nan_to_num(data, nan=np.nanmedian(data))
+            rotated_array = ndimage.rotate(data, image_rotation, reshape=False, mode='constant', cval=np.nan)
+
+            # Compute pixel coordinates for targets (if any)
+            if x is not None and y is not None:
+                # Get image center
+                img_shape = hdu.data.shape
+                center = np.array([img_shape[1]/2, img_shape[0]/2])
+                # Stack x, y for rotation
+                coords = np.vstack([x, y]).T
+                # Rotate coordinates around image center (negative angle to match image rotation)
+                coords_rot = self.rotate(coords, origin=center, degrees=-image_rotation)
+                x_rot, y_rot = coords_rot[:,0], coords_rot[:,1]
+            else:
+                x_rot = y_rot = None
+
+            
 
             fov_center_x = hdu.header['CRPIX1']
             fov_center_y = hdu.header['CRPIX2']
+            # print(np.nanmax(rotated_array), rotated_array)
+            ax.imshow(rotated_array, origin='lower', cmap="gist_earth", norm=normalizer)
 
-            ax.imshow(rotated_array, origin='lower',
-                      cmap="gist_earth", norm=normalizer)
+            if x is not None and y is not None:
+                ax.scatter(x, y, c='r')
 
-            if len(targetlist) != 0:
-                ax.scatter(x1, y1, c='r')
-
-            else:
-                pass
-            
             # Slit configuration
             fov_width = 3.1*60  # in arcsec
             delta_fov = 9.1  # in arcmin
-            coord_fov = SkyCoord(coord.ra+(0/3600)*u.deg,
-                                 coord.dec+(0)*u.arcsec)
+            coord_fov = SkyCoord(coord.ra+(0/3600)*u.deg, coord.dec+(0)*u.arcsec)
 
-            reg_detector = RectangleSkyRegion(coord_fov,
-                                            width=delta_fov*u.arcmin,
-                                            height=delta_fov*u.arcmin)
+            reg_detector = RectangleSkyRegion(coord_fov, width=delta_fov*u.arcmin, height=delta_fov*u.arcmin)
             pixel_region = reg_detector.to_pixel(wcs)
             artist = pixel_region.as_artist(color='gray', lw=1)
-            ax.add_artist(artist)     
-                                            
-            sky_region = RectangleSkyRegion(coord_fov,
-                                            width=fov_width*u.arcsec,
-                                            height=delta_fov*u.arcmin)
-            pixel_region = sky_region.to_pixel(wcs)
-            artist = pixel_region.as_artist(color='white', lw=1)
             ax.add_artist(artist)
+
+            # Ensure the full reg_detector region is visible
+            corners = pixel_region.corners
+            xmin, xmax = np.min(corners[:, 0]), np.max(corners[:, 0])
+            ymin, ymax = np.min(corners[:, 1]), np.max(corners[:, 1])
+
+            # Add a margin (optional, e.g., 5% of width/height)
+            xmargin = 0.05 * (xmax - xmin)
+            ymargin = 0.05 * (ymax - ymin)
+
+            ax.set_xlim(xmin - xmargin, xmax + xmargin)
+            ax.set_ylim(ymin - ymargin, ymax + ymargin)
+
+            sky_region = RectangleSkyRegion(coord_fov, width=fov_width*u.arcsec, height=delta_fov*u.arcmin)
+            pixel_region = sky_region.to_pixel(wcs)
+            artist = pixel_region.as_artist(color='w', lw=1)
+            ax.add_artist(artist)
+            
 
             c = ['r', 'tab:orange', 'yellow', 'lime', 'pink']
             slit_fov_check = []
-            
+
             for i in range(5):
                 slit0_width = float(self.tableWidget.item(0+i, 0).text())
                 delta_x0 = float(self.tableWidget.item(0+i, 1).text())
-                coord_slit0 = SkyCoord(coord.ra+(delta_x0/3600)*u.deg,
-                                       coord.dec+9.1*(2-i)/5*u.arcmin)
-                sky_region = RectangleSkyRegion(coord_slit0,
-                                                width=slit0_width*u.arcsec,
-                                                height=9.1/5*u.arcmin)
+                coord_slit0 = SkyCoord(coord.ra+(delta_x0/3600)*u.deg, coord.dec+9.1*(2-i)/5*u.arcmin)
+                sky_region = RectangleSkyRegion(coord_slit0, width=slit0_width*u.arcsec, height=9.1/5*u.arcmin)
                 pixel_region = sky_region.to_pixel(wcs)
                 artist = pixel_region.as_artist(color=c[i], lw=1)
                 ax.add_artist(artist)
-                ax.text(0.05, 0.9-i*0.05, f'Slit {i}', transform=ax.transAxes,
-                        c=c[i],  weight="bold")
+                ax.text(0.05, 0.9-i*0.05, f'Slit {i}', transform=ax.transAxes, c=c[i], weight="bold")
                 if abs(delta_x0) > fov_width/2:
                     slit_fov_check.append(delta_x0)
-            
+
             if len(slit_fov_check) > 0:
                 msg = QMessageBox()
                 msg.setIcon(QMessageBox.Critical)
                 msg.setText("Slit Out of FOV")
-                msg.setInformativeText('Atleast one slit is out of FOV')
+                msg.setInformativeText('At least one slit is out of FOV')
                 msg.setWindowTitle("Error")
                 msg.exec_()
 
-            #ax.plot_coord(coord)
             ax.set_xlabel('Pixel')
             ax.set_ylabel('Pixel')
             ax.set_title("2MASS Image (band Ks)")
-            #ax.scatter(coord.ra.value, coord.dec.value,
-            #           transform=ax.get_transform('world'), marker='o',
-            #           c='None', edgecolors='white', s=100)
             self.canv.draw()
-            
-        except:
-            print("Object not found")
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Critical)
-            msg.setText("Error")
-            msg.setInformativeText('Object could not be found or slit configuration invalid')
-            msg.setWindowTitle("Error")
-            msg.exec_()
+
+        # except Exception as e:
+        #     print("Object not found", e)
+        #     msg = QMessageBox()
+        #     msg.setIcon(QMessageBox.Critical)
+        #     msg.setText("Error")
+        #     msg.setInformativeText('Object could not be found or slit configuration invalid')
+        #     msg.setWindowTitle("Error")
+        #     msg.exec_()
     
-    def on_skyview_downloaded(self, hdu, wcs):
-        self.pushButton_5.setEnabled(True)
-        self.statusbar.clearMessage()
-        if hdu is None or wcs is None:
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Critical)
-            msg.setText("Download Error")
-            msg.setInformativeText('Failed to download image from SkyView')
-            msg.setWindowTitle("Error")
-            msg.exec_()
-            return 
         
-    
     def eng_plot_table(self, vmin=None, vmid=None, vmax=None, pmin=0.25, pmax=99.75, 
                    stretch='linear', exponent=2):
 
@@ -804,22 +890,34 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             slit_fov_check = []
             
             for i in range(5):
+                # map i=0..4 -> y positions 4..0 so Slit 1 is top and Slit 5 is bottom
+                y_pos = 4 - i
+
                 l_pos = float(self.eng_tableWidget.item(0+i, 0).text())*100
                 slit0_width = l_pos
                 delta_x0 = float(self.eng_tableWidget.item(0+i, 1).text())*100
 
-                if delta_x0==0:
-                    eng_ax.barh(i, slit0_width, height=0.98, left=0, align='edge', color='gray', alpha = 0.8)  # left slit
-                    eng_ax.barh(i, (fov_width-(slit0_width+delta_x0)), height=0.98, left=fov_width-(fov_width-(slit0_width+delta_x0)), align='edge', color='gray',  alpha = 0.8)
+                if delta_x0 == 0:
+                    eng_ax.barh(y_pos, slit0_width, height=0.98, left=0, align='edge', color='gray', alpha=0.8)
+                    eng_ax.barh(y_pos, (fov_width - (slit0_width + delta_x0)), height=0.98,
+                                left=fov_width - (fov_width - (slit0_width + delta_x0)), align='edge',
+                                color='gray', alpha=0.8)
                 else:
-                    eng_ax.barh(i, slit0_width, height=0.98, left=0, align='edge', color=c[i], alpha = 0.8)  # left slit
-                    eng_ax.barh(i, (fov_width-(slit0_width+delta_x0)), height=0.98, left=fov_width-(fov_width-(slit0_width+delta_x0)), align='edge', color=c[i],  alpha = 0.8)
+                    eng_ax.barh(y_pos, slit0_width, height=0.98, left=0, align='edge', color=c[i], alpha=0.8)
+                    eng_ax.barh(y_pos, (fov_width - (slit0_width + delta_x0)), height=0.98,
+                                left=fov_width - (fov_width - (slit0_width + delta_x0)), align='edge',
+                                color=c[i], alpha=0.8)
 
                 eng_ax.set_xlim(0, fov_width)
                 eng_ax.set_ylim(0, 5)
-                eng_ax.text(1.02, 0.1+i*0.2, f'Slit {i+1}', transform=eng_ax.transAxes,
-                        c=c[i],  weight="bold")
-                if slit0_width+(fov_width-(slit0_width+delta_x0)) > fov_width or l_pos>fov_width or l_pos<0 or l_pos+delta_x0>fov_width:
+                # hide y-axis tick labels
+                eng_ax.set_yticks([])
+                eng_ax.tick_params(axis='y', which='both', labelleft=False)
+
+                # place labels in axes coordinates but inverted so top shows Slit 1
+                eng_ax.text(1.02, 0.1 + (4 - i) * 0.2, f'Slit {i+1}', transform=eng_ax.transAxes,
+                            c=c[i], weight="bold")
+                if slit0_width + (fov_width - (slit0_width + delta_x0)) > fov_width or l_pos > fov_width or l_pos < 0 or l_pos + delta_x0 > fov_width:
                     slit_fov_check.append(delta_x0)
             
             if len(slit_fov_check) > 0:
@@ -853,6 +951,63 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
     def receive_data(self, received_data):
         self.eng_ser_port_out_edit.setText(f"<html><head/><body><p><span style=\" color:red;\">{received_data}</span></p><p><br/></p></body></html>")
         print(received_data)
+
+    def cancel_skyview(self):
+        """Cancel a running SkyView download. Uses QThread.terminate() to stop the worker
+        and performs UI cleanup. This is forceful but simple; it ensures the loading UI is cleared."""
+        if hasattr(self, "skyview_worker") and self.skyview_worker.isRunning():
+            try:
+                # forcefully stop the worker thread
+                self.skyview_worker.terminate()
+                self.skyview_worker.wait(2000)
+            except Exception as e:
+                print("Error terminating SkyView worker:", e)
+        # Cleanup UI regardless of whether termination succeeded
+        try:
+            self.loading_movie.stop()
+            self.loading_label.setVisible(False)
+            self.cancel_button.setEnabled(False)
+            self.pushButton_5.setEnabled(True)
+            self.statusbar.showMessage("SkyView download cancelled", 3000)
+            QtWidgets.QApplication.processEvents()
+        except Exception:
+            pass
+
+    def import_slits_to_eng(self):
+        """Copy slit settings from astronomers table (arcsec) to engineers table (mm).
+        As conversion factor, ask user for mm per arcsec (default 0.5 mm/arcsec)."""
+        # ask user for conversion scale
+        scale, ok = QtWidgets.QInputDialog.getDouble(self, "Conversion scale",
+                                                     "mm per arcsec:", 0.5, 0.0, 1e9, 6)
+        if not ok:
+            return
+
+        # Ensure eng table has items and write converted values
+        for i in range(5):
+            # read arcsec values from astronomers table, default to 0 if invalid/missing
+            try:
+                w_arc = float(self.tableWidget.item(i, 0).text())
+            except Exception:
+                w_arc = 0.0
+            try:
+                off_arc = float(self.tableWidget.item(i, 1).text())
+            except Exception:
+                off_arc = 0.0
+
+            w_mm = w_arc * scale
+            off_mm = off_arc * scale
+
+            item_w = QtWidgets.QTableWidgetItem(f"{w_mm:.6f}")
+            item_o = QtWidgets.QTableWidgetItem(f"{off_mm:.6f}")
+            self.eng_tableWidget.setItem(i, 0, item_w)
+            self.eng_tableWidget.setItem(i, 1, item_o)
+
+        # switch to engineers tab and notify user briefly
+        try:
+            self.tabWidget.setCurrentWidget(self.tab_4)
+        except Exception:
+            pass
+        self.statusbar.showMessage("Imported slit settings to Engineers (arcsec → mm)", 3000)
 
     
 class WorkerThread(QtCore.QThread):
