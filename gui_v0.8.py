@@ -18,9 +18,9 @@ from astropy.wcs import WCS
 from astropy.io import fits
 import matplotlib.pyplot as plt
 from astroquery.skyview import SkyView
-SkyView.clear_cache()
+# SkyView.clear_cache()
 from astropy.utils import data
-data.clear_download_cache()
+# data.clear_download_cache()
 
 
 import astropy.units as u
@@ -51,7 +51,9 @@ from astropy.visualization.mpl_normalize import ImageNormalize
 # import threading
 import numpy as np
 #%%
-y = 70
+y = 70 # Vertical spacing for layout alignment in SkyView tab
+tab4_y = -70 # Vertical spacing for layout alignment in Observations tab
+
 
 
 class SerialReaderThread(QThread):
@@ -149,6 +151,15 @@ class Ui_MainWindow(object):
         self.tabWidget = QtWidgets.QTabWidget(self.centralwidget)
         self.tabWidget.setGeometry(QtCore.QRect(10, 10, 1480, 1000))
         self.tabWidget.setObjectName("tabWidget")
+        # Theme selector (Light / Dark)
+        self.theme_combo = QtWidgets.QComboBox(self.centralwidget)
+        self.theme_combo.setGeometry(QtCore.QRect(1200, 15, 180, 31))
+        self.theme_combo.setObjectName("theme_combo")
+        self.theme_combo.addItems(["Light", "Dark"])
+        self.theme_combo.setToolTip("Select application theme")
+        # connect to MainWindow.apply_theme (MainWindow defines the handler)
+        self.theme_combo.currentIndexChanged.connect(self.apply_theme)
+
         self.tab_3 = QtWidgets.QWidget()
         self.tab_3.setObjectName("tab_3")
 
@@ -336,38 +347,38 @@ class Ui_MainWindow(object):
         self.tab_4 = QtWidgets.QWidget()
         
         self.eng_ser_portno_fname = QtWidgets.QLabel(self.tab_4)
-        self.eng_ser_portno_fname.setGeometry(QtCore.QRect(120, y+70*2, 151, 41))
+        self.eng_ser_portno_fname.setGeometry(QtCore.QRect(120, tab4_y+70*2, 151, 41))
         self.eng_ser_portno_fname.setObjectName("Serial port ID")
         
         self.eng_ser_port_no = QtWidgets.QLineEdit(self.tab_4)
-        self.eng_ser_port_no.setGeometry(QtCore.QRect(377, y+70*2, 250, 41))
+        self.eng_ser_port_no.setGeometry(QtCore.QRect(377, tab4_y+70*2, 250, 41))
         self.eng_ser_port_no.setToolTip("Serial port ID input")
         
         
         self.eng_ser_port_fname = QtWidgets.QLabel(self.tab_4)
-        self.eng_ser_port_fname.setGeometry(QtCore.QRect(120, y+70*3, 170, 41))
+        self.eng_ser_port_fname.setGeometry(QtCore.QRect(120, tab4_y+70*3, 170, 41))
         self.eng_ser_port_fname.setObjectName("Serial port input")
         
         self.eng_ser_port = QtWidgets.QLineEdit(self.tab_4)
-        self.eng_ser_port.setGeometry(QtCore.QRect(377, y+70*3, 250, 41))
+        self.eng_ser_port.setGeometry(QtCore.QRect(377, tab4_y+70*3, 250, 41))
         self.eng_ser_port.setObjectName("target_list")
         self.eng_ser_port.setToolTip("Serial port input")
         
         self.eng_ser_port_out = QtWidgets.QLabel(self.tab_4)
-        self.eng_ser_port_out.setGeometry(QtCore.QRect(120, y+70*10, 200, 41))
+        self.eng_ser_port_out.setGeometry(QtCore.QRect(120, tab4_y+70*12, 200, 41))
         self.eng_ser_port_out.setObjectName("Serial port output")
 
         self.eng_ser_port_out_edit = QtWidgets.QTextEdit(self.tab_4, readOnly=True)
-        self.eng_ser_port_out_edit.setGeometry(QtCore.QRect(377, y+70*10, 281, 41))
+        self.eng_ser_port_out_edit.setGeometry(QtCore.QRect(377, tab4_y+70*12, 281, 41))
         self.eng_ser_port_out.setObjectName("Serial port outputbox")
 
         self.eng_label_2 = QtWidgets.QLabel(self.tab_4)
-        self.eng_label_2.setGeometry(QtCore.QRect(120, y+70*4, 180, 120))
+        self.eng_label_2.setGeometry(QtCore.QRect(120, tab4_y+70*4, 180, 120))
         self.eng_label_2.setObjectName("label_2")
 
         
         self.eng_tableWidget = QtWidgets.QTableWidget(self.tab_4)
-        self.eng_tableWidget.setGeometry(QtCore.QRect(377, y+70*4, 275, 275))
+        self.eng_tableWidget.setGeometry(QtCore.QRect(377, tab4_y+70*4, 275, 275))
         self.eng_tableWidget.setObjectName("tableWidget")
         self.eng_tableWidget.setColumnCount(2)
         self.eng_tableWidget.setRowCount(5)
@@ -397,13 +408,70 @@ class Ui_MainWindow(object):
 
 
         self.eng_pushButton_5 = QtWidgets.QPushButton(self.tab_4)
-        self.eng_pushButton_5.setGeometry(QtCore.QRect(377, y+70*8, 275, 41))
+        self.eng_pushButton_5.setGeometry(QtCore.QRect(377, tab4_y+70*8, 275, 41))
         self.eng_pushButton_5.setObjectName("pushButton_5")
         self.eng_pushButton_5.setToolTip("Plot slit configuration over sky image")
 
+        # Button to send imported slit configuration via serial port
+        self.send_slits_button = QtWidgets.QPushButton(self.tab_4)
+        self.send_slits_button.setGeometry(QtCore.QRect(377, tab4_y+70*9, 275, 41))
+        self.send_slits_button.setObjectName("send_slits_button")
+        self.send_slits_button.setToolTip("Send imported slit configuration via serial port")
+        self.send_slits_button.setText("Configure Slits")
+        # Connect to MainWindow.send_slit_config (defined in MainWindow)
+        self.send_slits_button.clicked.connect(self.send_slit_config)
+
+        # Filter wheel selector (5 filters) + send button
+        # Wheel 1 selector + send button
+        self.filter1_label = QtWidgets.QLabel(self.tab_4)
+        self.filter1_label.setGeometry(QtCore.QRect(120, tab4_y+70*10, 150, 31))
+        self.filter1_label.setObjectName("filter1_label")
+        self.filter1_label.setText("Filter Wheel 1")
+        self.filter1_combo = QtWidgets.QComboBox(self.tab_4)
+        self.filter1_combo.setGeometry(QtCore.QRect(270, tab4_y+70*10, 120, 31))
+        self.filter1_combo.setObjectName("filter1_combo")
+        self.filter1_combo.addItems(["Filter1", "Filter2", "Filter3", "Filter4", "Filter5"])
+        self.filter1_combo.setToolTip("Select filter for Wheel 1")
+        self.filter1_combo.setStyleSheet(
+            "QComboBox { color: black; background-color: white; }"
+            "QComboBox QAbstractItemView { background-color: white; color: black; selection-background-color: #d0e7ff; }"
+        )
+        self.send_filter1_button = QtWidgets.QPushButton(self.tab_4)
+        self.send_filter1_button.setGeometry(QtCore.QRect(400, tab4_y+70*10, 200, 31))
+        self.send_filter1_button.setObjectName("send_filter1_button")
+        self.send_filter1_button.setText("Send Filter for W1")
+        self.send_filter1_button.setToolTip("Send selected filter for Wheel 1")
+        self.send_filter1_button.clicked.connect(self.send_filter_wheel1)
+
+        # Wheel 2 selector + send button
+        self.filter2_label = QtWidgets.QLabel(self.tab_4)
+        self.filter2_label.setGeometry(QtCore.QRect(120, tab4_y+70*11, 150, 31))
+        self.filter2_label.setObjectName("filter2_label")
+        self.filter2_label.setText("Filter Wheel 2")
+        self.filter2_combo = QtWidgets.QComboBox(self.tab_4)
+        self.filter2_combo.setGeometry(QtCore.QRect(270, tab4_y+70*11, 120, 31))
+        self.filter2_combo.setObjectName("filter2_combo")
+        self.filter2_combo.addItems(["Filter1", "Filter2", "Filter3", "Filter4", "Filter5"])
+        self.filter2_combo.setToolTip("Select filter for Wheel 2")
+        self.filter2_combo.setStyleSheet(
+            "QComboBox { color: black; background-color: white; }"
+            "QComboBox QAbstractItemView { background-color: white; color: black; selection-background-color: #d0e7ff; }"
+        )
+        self.send_filter2_button = QtWidgets.QPushButton(self.tab_4)
+        self.send_filter2_button.setGeometry(QtCore.QRect(400, tab4_y+70*11, 200, 31))
+        self.send_filter2_button.setObjectName("send_filter2_button")
+        self.send_filter2_button.setText("Send Filter for W2")
+        self.send_filter2_button.setToolTip("Send selected filter for Wheel 2")
+        self.send_filter2_button.clicked.connect(self.send_filter_wheel2)        
+        
+
+
+        self.eng_gridLayoutWidget = QtWidgets.QWidget(self.tab_4)
+        self.eng_gridLayoutWidget.setGeometry(QtCore.QRect(750,tab4_y,661,661))
+        self.eng_gridLayoutWidget.setObjectName("gridLayoutWidget")
         
         self.eng_gridLayoutWidget = QtWidgets.QWidget(self.tab_4)
-        self.eng_gridLayoutWidget.setGeometry(QtCore.QRect(750,y,661,661))
+        self.eng_gridLayoutWidget.setGeometry(QtCore.QRect(750,tab4_y,661,661))
         self.eng_gridLayoutWidget.setObjectName("gridLayoutWidget")
         self.eng_gridLayout = QtWidgets.QGridLayout(self.eng_gridLayoutWidget)
         self.eng_gridLayout.setContentsMargins(0, 0, 0, 0)
@@ -450,15 +518,13 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Target name</span></p></body></html>"))
-        self.coords_label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Coordinates</span></p></body></html>"))
-        self.label_filename.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">File name</span></p></body></html>"))
-        self.label_2.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Slit Configurations <br> (Enter in arcsec) </span></p></body></html>"))
-        self.target_list_fname.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Target list</span></p></body></html>"))
-        
-        self.label_Temp.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:black;\">Temperature</span></p><p><br/></p></body></html>"))
-        
-        self.field_rotation.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">FOV Rotation</span></p></body></html>"))
+        self.label.setText(_translate("MainWindow", "Target name"))
+        self.coords_label.setText(_translate("MainWindow", "Coordinates"))
+        self.label_filename.setText(_translate("MainWindow", "File name"))
+        self.label_2.setText(_translate("MainWindow", "Slit Configurations\n(Enter in arcsec)"))
+        self.target_list_fname.setText(_translate("MainWindow", "Target list"))
+        self.label_Temp.setText(_translate("MainWindow", "Temperature"))
+        self.field_rotation.setText(_translate("MainWindow", "FOV Rotation"))
 
         item = self.tableWidget.verticalHeaderItem(0)
         item.setText(_translate("MainWindow", "0"))
@@ -481,12 +547,11 @@ class Ui_MainWindow(object):
         
         #######################################################################
 
-        self.eng_label_2.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Slit Configurations <br> (Enter in mm) </span></p></body></html>"))
-        self.eng_ser_port_fname.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Serial Port Input</span></p></body></html>"))
-        self.eng_ser_port_out.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:black;\">Serial Port Output</span></p><p><br/></p></body></html>"))
-        self.eng_ser_port_out_edit.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:red;\">Serial Port Output</span></p><p><br/></p></body></html>"))
-        self.eng_ser_portno_fname.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" color:#000000;\">Serial Port ID</span></p></body></html>"))
-
+        self.eng_label_2.setText(_translate("MainWindow", "Slit Configurations\n(Enter in mm)"))
+        self.eng_ser_port_fname.setText(_translate("MainWindow", "Serial Port Input"))
+        self.eng_ser_port_out.setText(_translate("MainWindow", "Serial Port Output"))
+        self.eng_ser_port_out_edit.setText(_translate("MainWindow", "Serial Port Output"))
+        self.eng_ser_portno_fname.setText(_translate("MainWindow", "Serial Port ID"))
 
         item = self.eng_tableWidget.verticalHeaderItem(0)
         item.setText(_translate("MainWindow", "1"))
@@ -505,12 +570,10 @@ class Ui_MainWindow(object):
         item = self.eng_tableWidget.horizontalHeaderItem(1)
         item.setText(_translate("MainWindow", "Slit Width"))
         self.eng_pushButton_5.setText(_translate("MainWindow", "Slit Configuration Preview"))
-               
-        #########################################
+        #@@
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Planning Tool"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("MainWindow", "Observation Setup"))
-        
-        
+         
 
 
 
@@ -520,6 +583,15 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.threadpool = QtCore.QThreadPool()
         #self.worker_thread = WorkerThread()
         self.setupUi(self)
+
+        # apply default theme (combo was created in setupUi)
+        try:
+            # set to the combo default and apply theme
+            self.theme_combo.setCurrentIndex(0)
+            self.apply_theme(self.theme_combo.currentIndex())
+        except Exception:
+            pass
+
 
         try:   
             pn = os.popen("ls /dev/ttyUSB*").read()[:-1]
@@ -839,16 +911,63 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             c = ['r', 'tab:orange', 'yellow', 'lime', 'pink']
             slit_fov_check = []
 
+            # for i in range(5):
+            #     slit0_width = float(self.tableWidget.item(0+i, 0).text())
+            #     delta_x0 = float(self.tableWidget.item(0+i, 1).text())
+            #     coord_slit0 = SkyCoord(coord.ra+(delta_x0/3600)*u.deg, coord.dec+9.1*(2-i)/5*u.arcmin)
+            #     sky_region = RectangleSkyRegion(coord_slit0, width=slit0_width*u.arcsec, height=9.1/5*u.arcmin)
+            #     pixel_region = sky_region.to_pixel(wcs)
+            #     artist = pixel_region.as_artist(color=c[i], lw=1)
+            #     ax.add_artist(artist)
+            #     ax.text(0.05, 0.9-i*0.05, f'Slit {i+1}', transform=ax.transAxes, c=c[i], weight="bold")
+            #     if abs(delta_x0) > fov_width/2:
+            #         slit_fov_check.append(delta_x0)
+
             for i in range(5):
-                slit0_width = float(self.tableWidget.item(0+i, 0).text())
-                delta_x0 = float(self.tableWidget.item(0+i, 1).text())
-                coord_slit0 = SkyCoord(coord.ra+(delta_x0/3600)*u.deg, coord.dec+9.1*(2-i)/5*u.arcmin)
-                sky_region = RectangleSkyRegion(coord_slit0, width=slit0_width*u.arcsec, height=9.1/5*u.arcmin)
+                # robustly read slit width / offset from table (defaults to 0)
+                try:
+                    item_w = self.tableWidget.item(i, 0)
+                    slit0_width = float(item_w.text()) if item_w is not None and item_w.text().strip() != "" else 0.0
+                except Exception:
+                    slit0_width = 0.0
+                try:
+                    item_off = self.tableWidget.item(i, 1)
+                    delta_x0 = float(item_off.text()) if item_off is not None and item_off.text().strip() != "" else 0.0
+                except Exception:
+                    delta_x0 = 0.0
+
+                # slit center in sky coords (offset in arcsec)
+                coord_slit0 = SkyCoord(coord.ra + (delta_x0 / 3600.0) * u.deg,
+                                       coord.dec + 9.1 * (2 - i) / 5.0 * u.arcmin)
+
+                # For plotting, regions requires strictly positive width. If slit width == 0 treat as 'closed'
+                # and draw a thin vertical marker instead of a filled rectangle.
+                draw_width_arcsec = slit0_width if slit0_width > 0.0 else 1e-6
+                sky_region = RectangleSkyRegion(coord_slit0,
+                                                width=draw_width_arcsec * u.arcsec,
+                                                height=(9.1 / 5.0) * u.arcmin)
                 pixel_region = sky_region.to_pixel(wcs)
-                artist = pixel_region.as_artist(color=c[i], lw=1)
-                ax.add_artist(artist)
-                ax.text(0.05, 0.9-i*0.05, f'Slit {i+1}', transform=ax.transAxes, c=c[i], weight="bold")
-                if abs(delta_x0) > fov_width/2:
+
+                # corners and center in pixel coordinates
+                corners = pixel_region.corners
+                xmin_r, xmax_r = np.min(corners[:, 0]), np.max(corners[:, 0])
+                ymin_r, ymax_r = np.min(corners[:, 1]), np.max(corners[:, 1])
+                xcen = 0.5 * (xmin_r + xmax_r)
+                ycen = 0.5 * (ymin_r + ymax_r)
+
+                if slit0_width > 0.0:
+                    # normal filled rectangle for open slit
+                    artist = pixel_region.as_artist(color=c[i], lw=1)
+                    ax.add_artist(artist)
+                else:
+                    # closed slit -> draw a thin line at slit centre and label it 'Closed'
+                    ax.plot([xcen, xcen], [ymin_r, ymax_r], color=c[i], lw=2)
+                    ax.text(xcen + 5, ycen, "Closed", color=c[i], weight="bold", va='center')
+
+                ax.text(0.05, 0.9 - i * 0.05, f'Slit {i+1}', transform=ax.transAxes, c=c[i], weight="bold")
+
+                # check offset relative to FOV width (in arcsec)
+                if abs(delta_x0) > fov_width / 2.0:
                     slit_fov_check.append(delta_x0)
 
             if len(slit_fov_check) > 0:
@@ -967,6 +1086,151 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.eng_ser_port_out_edit.setText(f"<html><head/><body><p><span style=\" color:red;\">{received_data}</span></p><p><br/></p></body></html>")
         print(received_data)
 
+    def send_slit_config(self):
+        """Send the engineers table slit configuration over serial port.
+        Format: 'SLITS;L1,W1;L2,W2;L3,W3;L4,W4;L5,W5\n' where L/W are mm (as shown in eng_tableWidget)."""
+        # check serial port availability
+        if not hasattr(self, "serial_port") or self.serial_port is None:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Serial Port Not Available")
+            msg.setInformativeText("Serial port not connected. Cannot send slit configuration.")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            return
+        try:
+            is_open = getattr(self.serial_port, "is_open", True)
+            if not is_open:
+                raise RuntimeError("Serial port is closed")
+        except Exception:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Serial Port Error")
+            msg.setInformativeText("Serial port not open or unavailable.")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            return
+
+        parts = []
+        for i in range(5):
+            try:
+                item_L = self.eng_tableWidget.item(i, 0)
+                item_W = self.eng_tableWidget.item(i, 1)
+                L = float(item_L.text()) if item_L is not None and item_L.text().strip() != "" else 0.0
+                W = float(item_W.text()) if item_W is not None and item_W.text().strip() != "" else 0.0
+            except Exception:
+                L = 0.0
+                W = 0.0
+            parts.append(f"{L:.6f},{W:.6f}")
+
+        payload = "SLITS;" + ";".join(parts) + "\n"
+        try:
+            self.serial_port.write(payload.encode())
+            self.statusbar.showMessage("Slit configuration sent", 3000)
+        except Exception as e:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Send Failed")
+            msg.setInformativeText(f"Failed to send slit configuration: {e}")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+
+    
+
+    def send_filter_wheel1(self):
+        """Send selected filter for Wheel 1 via serial port.
+        Payload: 'FILTER;1;<index>;<name>\\n' where index is 1..5."""
+        try:
+            idx = self.filter1_combo.currentIndex()
+            name = self.filter1_combo.currentText()
+        except Exception:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("Filter Selection Error")
+            msg.setInformativeText("Wheel 1 selector missing.")
+            msg.setWindowTitle("Warning")
+            msg.exec_()
+            return
+
+        if not hasattr(self, "serial_port") or self.serial_port is None:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Serial Port Not Available")
+            msg.setInformativeText("Serial port not connected. Cannot send filter command.")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            return
+        try:
+            if not getattr(self.serial_port, "is_open", True):
+                raise RuntimeError("Serial port is closed")
+        except Exception:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Serial Port Error")
+            msg.setInformativeText("Serial port not open or unavailable.")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            return
+
+        payload = f"FILTER;1;{idx+1};{name}\n"
+        try:
+            self.serial_port.write(payload.encode())
+            self.statusbar.showMessage(f"Sent Wheel1 filter {idx+1} ({name})", 3000)
+        except Exception as e:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Send Failed")
+            msg.setInformativeText(f"Failed to send filter command: {e}")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+
+    def send_filter_wheel2(self):
+        """Send selected filter for Wheel 2 via serial port.
+        Payload: 'FILTER;2;<index>;<name>\\n' where index is 1..5."""
+        try:
+            idx = self.filter2_combo.currentIndex()
+            name = self.filter2_combo.currentText()
+        except Exception:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("Filter Selection Error")
+            msg.setInformativeText("Wheel 2 selector missing.")
+            msg.setWindowTitle("Warning")
+            msg.exec_()
+            return
+
+        if not hasattr(self, "serial_port") or self.serial_port is None:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Serial Port Not Available")
+            msg.setInformativeText("Serial port not connected. Cannot send filter command.")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            return
+        try:
+            if not getattr(self.serial_port, "is_open", True):
+                raise RuntimeError("Serial port is closed")
+        except Exception:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Serial Port Error")
+            msg.setInformativeText("Serial port not open or unavailable.")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            return
+
+        payload = f"FILTER;2;{idx+1};{name}\n"
+        try:
+            self.serial_port.write(payload.encode())
+            self.statusbar.showMessage(f"Sent Wheel2 filter {idx+1} ({name})", 3000)
+        except Exception as e:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Send Failed")
+            msg.setInformativeText(f"Failed to send filter command: {e}")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+
     def cancel_skyview(self):
         """Cancel a running SkyView download. Uses QThread.terminate() to stop the worker
         and performs UI cleanup. This is forceful but simple; it ensures the loading UI is cleared."""
@@ -988,44 +1252,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         except Exception:
             pass
 
-    # def import_slits_to_eng(self):
-    #     """Copy slit settings from astronomers table (arcsec) to engineers table (mm).
-    #     As conversion factor, ask user for mm per arcsec (default 0.5 mm/arcsec)."""
-    #     # ask user for conversion scale
-    #     scale, ok = QtWidgets.QInputDialog.getDouble(self, "Conversion scale",
-    #                                                  "mm per arcsec:", 0.5, 0.0, 1e9, 6)
-    #     if not ok:
-    #         return
-
-    #     # Ensure eng table has items and write converted values
-    #     for i in range(5):
-    #         # read arcsec values from astronomers table, default to 0 if invalid/missing
-    #         try:
-    #             w_arc = float(self.tableWidget.item(i, 0).text())
-    #         except Exception:
-    #             w_arc = 0.0
-    #         try:
-    #             off_arc = float(self.tableWidget.item(i, 1).text())
-    #         except Exception:
-    #             off_arc = 0.0
-
-    #         w_mm = w_arc * scale
-    #         off_mm = off_arc * scale
-
-    #         item_w = QtWidgets.QTableWidgetItem(f"{w_mm:.6f}")
-    #         item_o = QtWidgets.QTableWidgetItem(f"{off_mm:.6f}")
-    #         self.eng_tableWidget.setItem(i, 0, item_w)
-    #         self.eng_tableWidget.setItem(i, 1, item_o)
-
-    #     # switch to engineers tab and notify user briefly
-    #     try:
-    #         self.tabWidget.setCurrentWidget(self.tab_4)
-    #     except Exception:
-    #         pass
-    #     self.statusbar.showMessage("Imported slit settings to Engineers (arcsec → mm)", 3000)
-
     
-    # ...existing code...
+    
     def import_slits_to_eng(self):
         """Copy slit settings from astronomers table (arcsec) to engineers table (mm).
 
@@ -1095,6 +1323,93 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         except Exception:
             pass
         self.statusbar.showMessage("Imported slit settings to Engineers (arcsec → mm). L Position is left edge from left of FOV.", 3000)
+
+    def apply_theme(self, index):
+        """Apply theme selected in the theme_combo. index 0 = Light, 1 = Dark."""
+        name = self.theme_combo.currentText() if hasattr(self, "theme_combo") else ("Light" if index == 0 else "Dark")
+        if name.lower().startswith("dark"):
+            self.apply_dark_theme()
+        else:
+            self.apply_light_theme()
+
+    def apply_light_theme(self):
+        qapp = QtWidgets.QApplication.instance()
+        # Clear any widget-level stylesheet that may override application stylesheet
+        try:
+            self.setStyleSheet("")
+        except Exception:
+            pass
+        qapp.setStyleSheet("""
+        QWidget { background-color: #ffffff; color: #000000; font-family: Times; font-size: 14pt; }
+        QLineEdit, QComboBox, QTableWidget, QTextEdit { background-color: #ffffff; color: #000000; selection-background-color: #cce4ff; }
+        QPushButton { background-color: #f0f0f0; color: #000000; border: 1px solid #bdbdbd; padding: 4px; }
+        QTabWidget::pane { background: #ffffff; }
+        QStatusBar { background: #f0f0f0; color: #000000; }
+        QComboBox QAbstractItemView { background-color: #ffffff; color: #000000; selection-background-color: #d0e7ff; }
+        """)
+        # Matplotlib style for light theme
+        try:
+            plt.style.use('default')
+        except Exception:
+            pass
+        # Redraw canvases if present so mpl theme takes effect
+        try:
+            if hasattr(self, "canv") and self.canv:
+                self.canv.draw()
+        except Exception:
+            pass
+        try:
+            if hasattr(self, "eng_canv") and self.eng_canv:
+                self.eng_canv.draw()
+        except Exception:
+            pass
+
+    def apply_dark_theme(self):
+        qapp = QtWidgets.QApplication.instance()
+        # Clear any widget-level stylesheet first so application stylesheet can take effect
+        try:
+            self.setStyleSheet("")
+        except Exception:
+            pass
+        # Use a dark navy background for the window and readable text colors
+        DARK_BG = "#0b1f3a"   # dark navy
+        CONTROL_BG = "#17263a"  # slightly lighter for controls
+        qapp.setStyleSheet(f"""
+        QWidget {{ background-color: {DARK_BG}; color: #eaeaea; font-family: Times; font-size: 14pt; }}
+        QLineEdit, QComboBox, QTableWidget, QTextEdit {{ background-color: {CONTROL_BG}; color: #eaeaea; selection-background-color: #2b6aa0; }}
+        QPushButton {{ background-color: #1f4e7a; color: #ffffff; border: 1px solid #0b1f3a; padding: 4px; }}
+        QTabWidget::pane {{ background: {DARK_BG}; }}
+        QStatusBar {{ background: #071427; color: #eaeaea; }}
+        QComboBox QAbstractItemView {{ background-color: {CONTROL_BG}; color: #eaeaea; selection-background-color: #2b6aa0; }}
+        """)
+        # Ensure main window background uses the same dark navy (overrides any earlier MainWindow stylesheet)
+        try:
+            self.setStyleSheet(f"QMainWindow {{ background-color: {DARK_BG}; }}")
+        except Exception:
+            pass
+        # Matplotlib dark style
+        try:
+            plt.style.use('dark_background')
+        except Exception:
+            pass
+        # Redraw canvases so matplotlib picks up dark style
+        try:
+            if hasattr(self, "canv") and self.canv:
+                # set facecolor to transparent so underlying widget bg shows through
+                self.canv.fig.set_facecolor('none')
+                for ax in self.canv.fig.axes:
+                    ax.set_facecolor(DARK_BG)
+                self.canv.draw()
+        except Exception:
+            pass
+        try:
+            if hasattr(self, "eng_canv") and self.eng_canv:
+                self.eng_canv.fig.set_facecolor('none')
+                for ax in self.eng_canv.fig.axes:
+                    ax.set_facecolor(DARK_BG)
+                self.eng_canv.draw()
+        except Exception:
+            pass
 
 
 
