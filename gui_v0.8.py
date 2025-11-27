@@ -19,6 +19,9 @@ from astropy.io import fits
 import matplotlib.pyplot as plt
 from astroquery.skyview import SkyView
 SkyView.clear_cache()
+from astropy.utils import data
+data.clear_download_cache()
+
 
 import astropy.units as u
 from astropy.nddata import Cutout2D
@@ -121,7 +124,8 @@ class SkyViewWorker(QtCore.QThread):
 
     def run(self):
         try:
-            paths = SkyView.get_images(position=self.position, height=self.height, width=self.width, survey=self.survey)
+            paths = SkyView.get_images(position=self.position, height=self.height, 
+                                       width=self.width, survey=self.survey)
             hdu = paths[0][0]
             wcs = WCS(hdu.header).celestial
             self.finished.emit(hdu, wcs)
@@ -500,7 +504,7 @@ class Ui_MainWindow(object):
         item.setText(_translate("MainWindow", "L Position"))
         item = self.eng_tableWidget.horizontalHeaderItem(1)
         item.setText(_translate("MainWindow", "Slit Width"))
-        self.eng_pushButton_5.setText(_translate("MainWindow", "Configure Slit"))
+        self.eng_pushButton_5.setText(_translate("MainWindow", "Slit Configuration Preview"))
                
         #########################################
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Planning Tool"))
@@ -751,10 +755,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             targetlist = self.target_list.text()
 
             if len(targetlist) != 0:
-                df = pd.read_csv(targetlist)
-                x, y = df['RA'], df['Dec']
-                target_coords = SkyCoord(x, y, unit='deg')
-                x, y = wcs.world_to_pixel(target_coords)
+                try:
+                    df = pd.read_csv(targetlist)
+                    x, y = df['RA'], df['Dec']
+                    target_coords = SkyCoord(x, y, unit='deg')
+                    x, y = wcs.world_to_pixel(target_coords)
+                except Exception as e:
+                    print(f"Error reading target list: {e}")
+                    x = y = None
             else:
                 x = y = None
 
@@ -778,7 +786,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 # Stack x, y for rotation
                 coords = np.vstack([x, y]).T
                 # Rotate coordinates around image center (negative angle to match image rotation)
-                coords_rot = self.rotate(coords, origin=center, degrees=-image_rotation)
+                coords_rot = rotate(coords, origin=center, degrees=-image_rotation)
                 x_rot, y_rot = coords_rot[:,0], coords_rot[:,1]
             else:
                 x_rot = y_rot = None
@@ -790,8 +798,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # print(np.nanmax(rotated_array), rotated_array)
             ax.imshow(rotated_array, origin='lower', cmap="gist_earth", norm=normalizer)
 
-            if x is not None and y is not None:
-                ax.scatter(x, y, c='r')
+            
 
             # Slit configuration
             fov_width = 3.1*60  # in arcsec
@@ -819,6 +826,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             pixel_region = sky_region.to_pixel(wcs)
             artist = pixel_region.as_artist(color='w', lw=1)
             ax.add_artist(artist)
+
+            if x is not None and y is not None:
+                try:
+                    ax.scatter(x_rot, y_rot, c='r', s=30, edgecolors='white', label='Targets')
+                    ax.legend()
+
+                except Exception as e:
+                    print(f"Error plotting targets: {e}")
             
 
             c = ['r', 'tab:orange', 'yellow', 'lime', 'pink']
@@ -832,7 +847,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 pixel_region = sky_region.to_pixel(wcs)
                 artist = pixel_region.as_artist(color=c[i], lw=1)
                 ax.add_artist(artist)
-                ax.text(0.05, 0.9-i*0.05, f'Slit {i}', transform=ax.transAxes, c=c[i], weight="bold")
+                ax.text(0.05, 0.9-i*0.05, f'Slit {i+1}', transform=ax.transAxes, c=c[i], weight="bold")
                 if abs(delta_x0) > fov_width/2:
                     slit_fov_check.append(delta_x0)
 
@@ -886,7 +901,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
  
             fov_width = 8572 # in mm*100
  
-            c = ['r', 'tab:orange', 'skyblue', 'lime', 'pink']
+            c = ['r', 'tab:orange', 'yellow', 'lime', 'pink']
             slit_fov_check = []
             
             for i in range(5):
@@ -973,41 +988,115 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         except Exception:
             pass
 
+    # def import_slits_to_eng(self):
+    #     """Copy slit settings from astronomers table (arcsec) to engineers table (mm).
+    #     As conversion factor, ask user for mm per arcsec (default 0.5 mm/arcsec)."""
+    #     # ask user for conversion scale
+    #     scale, ok = QtWidgets.QInputDialog.getDouble(self, "Conversion scale",
+    #                                                  "mm per arcsec:", 0.5, 0.0, 1e9, 6)
+    #     if not ok:
+    #         return
+
+    #     # Ensure eng table has items and write converted values
+    #     for i in range(5):
+    #         # read arcsec values from astronomers table, default to 0 if invalid/missing
+    #         try:
+    #             w_arc = float(self.tableWidget.item(i, 0).text())
+    #         except Exception:
+    #             w_arc = 0.0
+    #         try:
+    #             off_arc = float(self.tableWidget.item(i, 1).text())
+    #         except Exception:
+    #             off_arc = 0.0
+
+    #         w_mm = w_arc * scale
+    #         off_mm = off_arc * scale
+
+    #         item_w = QtWidgets.QTableWidgetItem(f"{w_mm:.6f}")
+    #         item_o = QtWidgets.QTableWidgetItem(f"{off_mm:.6f}")
+    #         self.eng_tableWidget.setItem(i, 0, item_w)
+    #         self.eng_tableWidget.setItem(i, 1, item_o)
+
+    #     # switch to engineers tab and notify user briefly
+    #     try:
+    #         self.tabWidget.setCurrentWidget(self.tab_4)
+    #     except Exception:
+    #         pass
+    #     self.statusbar.showMessage("Imported slit settings to Engineers (arcsec → mm)", 3000)
+
+    
+    # ...existing code...
     def import_slits_to_eng(self):
         """Copy slit settings from astronomers table (arcsec) to engineers table (mm).
-        As conversion factor, ask user for mm per arcsec (default 0.5 mm/arcsec)."""
-        # ask user for conversion scale
-        scale, ok = QtWidgets.QInputDialog.getDouble(self, "Conversion scale",
-                                                     "mm per arcsec:", 0.5, 0.0, 1e9, 6)
-        if not ok:
-            return
 
-        # Ensure eng table has items and write converted values
+        Astronomer's table provides:
+         - slit width (arcsec)
+         - offset (arcsec) = center of slit relative to center of FOV (arcsec)
+
+        Engineers table should receive:
+         - L Position (mm) = position of left edge of slit measured from LEFT edge of engineer frame (mm)
+         - Slit Width (mm) = slit width converted to mm
+
+        Conversion:
+         - 9.1 arcmin = 9.1 * 60 = 546 arcsec -> spans 85.72 mm on detector
+         - mm per arcsec = 85.72 / 546 ≈ 0.157151 mm/arcsec
+        """
+
+        DEFAULT_SCALE = 85.72 / (9.1 * 60.0)  # ≈ 0.157151 mm/arcsec
+        scale, ok = QtWidgets.QInputDialog.getDouble(self, "Conversion scale",
+                                                     "mm per arcsec:", DEFAULT_SCALE, 0.0, 1e9, 6)
+        if not ok:
+             return
+
+        # engineer fov parameters (consistent with eng_plot_table)
+        fov_width_plot_units = 8572          # mm * 100 (as used in eng_plot_table)
+        fov_width_mm = fov_width_plot_units / 100.0
+        fov_center_mm = fov_width_mm / 2.0   # center in mm corresponds to zero offset in astronomer's frame
+
+        # Read each row from astronomers table, compute left edge and width in mm,
+        # and write into engineers table.
         for i in range(5):
-            # read arcsec values from astronomers table, default to 0 if invalid/missing
+            # read slit width (arcsec)
             try:
-                w_arc = float(self.tableWidget.item(i, 0).text())
+                item_w_arc = self.tableWidget.item(i, 0)
+                w_arc = float(item_w_arc.text()) if item_w_arc is not None and item_w_arc.text().strip() != "" else 0.0
             except Exception:
                 w_arc = 0.0
+
+            # read offset (arcsec) - center offset from FOV center (positive -> to the right)
             try:
-                off_arc = float(self.tableWidget.item(i, 1).text())
+                item_off_arc = self.tableWidget.item(i, 1)
+                off_arc = float(item_off_arc.text()) if item_off_arc is not None and item_off_arc.text().strip() != "" else 0.0
             except Exception:
                 off_arc = 0.0
 
-            w_mm = w_arc * scale
-            off_mm = off_arc * scale
+            # convert sizes to mm
+            width_mm = w_arc * scale
+            off_mm = off_arc * scale *(-1)  # invert offset sign: astronomers +ve = right, engineers +ve = left
+            # off_mm = off_arc * scale  # astronomer's zero at FOV center -> engineer center = fov_center_mm
 
-            item_w = QtWidgets.QTableWidgetItem(f"{w_mm:.6f}")
-            item_o = QtWidgets.QTableWidgetItem(f"{off_mm:.6f}")
-            self.eng_tableWidget.setItem(i, 0, item_w)
-            self.eng_tableWidget.setItem(i, 1, item_o)
+            # determine left edge position in engineer frame (mm measured from LEFT edge)
+            # center position (mm) + offset (mm) gives slit center in engineer frame,
+            # subtract half the width to get left edge.
+            left_mm = fov_center_mm + off_mm - (width_mm / 2.0)
+
+            # clamp to sensible range (optional) - keep within [0, fov_width_mm]
+            # left_mm = max(0.0, min(left_mm, fov_width_mm - width_mm))
+
+            # store in engineers table: column 0 = L Position (mm), column 1 = Slit Width (mm)
+            item_left = QtWidgets.QTableWidgetItem(f"{left_mm:.6f}")
+            item_width = QtWidgets.QTableWidgetItem(f"{width_mm:.6f}")
+            self.eng_tableWidget.setItem(i, 0, item_left)
+            self.eng_tableWidget.setItem(i, 1, item_width)
 
         # switch to engineers tab and notify user briefly
         try:
             self.tabWidget.setCurrentWidget(self.tab_4)
         except Exception:
             pass
-        self.statusbar.showMessage("Imported slit settings to Engineers (arcsec → mm)", 3000)
+        self.statusbar.showMessage("Imported slit settings to Engineers (arcsec → mm). L Position is left edge from left of FOV.", 3000)
+
+
 
     
 class WorkerThread(QtCore.QThread):
