@@ -229,13 +229,31 @@ class Ui_MainWindow(object):
         
 
         self.label_2 = QtWidgets.QLabel(self.tab_3)
-        self.label_2.setGeometry(QtCore.QRect(120, y+70*5, 180, 120))
         self.label_2.setObjectName("label_2")
+        lbl_font = QtGui.QFont()
+        lbl_font.setPointSize(11)
+        self.label_2.setFont(lbl_font)
+        self.label_2.setMaximumHeight(60)
+        self.label_2.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        self.label_2.setWordWrap(False)
 
         
         self.tableWidget = QtWidgets.QTableWidget(self.tab_3)
-        self.tableWidget.setGeometry(QtCore.QRect(377, y+70*5, 275, 275))
+        self.tableWidget.setGeometry(QtCore.QRect(377, y+70*3, 275, 275))
         self.tableWidget.setObjectName("tableWidget")
+        
+        # Make table font and row/ header sizes compact-but-readable
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        self.tableWidget.setFont(font)
+        header_h = 30
+        row_h = 26
+        self.tableWidget.horizontalHeader().setFixedHeight(header_h)
+        # Use fixed row sizing (not Stretch) so we can compute total height reliably
+        self.tableWidget.verticalHeader().setDefaultSectionSize(row_h)
+        self.tableWidget.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
+        self.tableWidget.setStyleSheet("QTableWidget::item { padding: 4px 6px; }")
+
         self.tableWidget.setColumnCount(2)
         self.tableWidget.setRowCount(5)
         item = QtWidgets.QTableWidgetItem()
@@ -249,14 +267,24 @@ class Ui_MainWindow(object):
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setVerticalHeaderItem(4, item)
         item = QtWidgets.QTableWidgetItem()
+        
         self.tableWidget.horizontalHeader().setStretchLastSection(True)
         self.tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.tableWidget.verticalHeader().setStretchLastSection(True)
-        self.tableWidget.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        # Ensure vertical header uses fixed rows so we can size the widget exactly
+        self.tableWidget.verticalHeader().setStretchLastSection(False)
+ 
         
         self.tableWidget.setHorizontalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
         self.tableWidget.setHorizontalHeaderItem(1, item)
+
+        # compute and fix table height so all rows are visible without vertical scrollbar
+        nrows = max(1, self.tableWidget.rowCount())
+        total_h = header_h + nrows * row_h + 6  # small padding
+        self.tableWidget.setMinimumHeight(total_h)
+        self.tableWidget.setMaximumHeight(total_h)
+        # self.tableWidget.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        
 
         self.pushButton_5 = QtWidgets.QPushButton(self.tab_3)
         self.pushButton_5.setGeometry(QtCore.QRect(377, y+580+50, 275, 41))
@@ -288,18 +316,7 @@ class Ui_MainWindow(object):
         self.loading_label.setAttribute(QtCore.Qt.WA_TranslucentBackground, True)
         
         
-        self.label_Temp = QtWidgets.QLabel(self.tab_3)
-        self.label_Temp.setGeometry(QtCore.QRect(120, y+70*10+50, 131, 31))
-        self.label_Temp.setObjectName("Temperature")
         
-        self.lcdNumber = QtWidgets.QLCDNumber(self.tab_3)
-        self.lcdNumber.setGeometry(QtCore.QRect(300, y+70*10+50, 161, 61))
-        self.lcdNumber.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.lcdNumber.setStyleSheet("color: rgb(255, 0, 0);")
-        self.lcdNumber.setInputMethodHints(QtCore.Qt.ImhNoEditMenu)
-        self.lcdNumber.setSegmentStyle(QtWidgets.QLCDNumber.Filled)
-        self.lcdNumber.setProperty("intValue", 120)
-        self.lcdNumber.setObjectName("lcdNumber")
         
         
         self.gridLayoutWidget = QtWidgets.QWidget(self.tab_3)
@@ -340,11 +357,93 @@ class Ui_MainWindow(object):
         self.file_upload.clicked.connect(self.open_file)    
         self.load_targets.clicked.connect(self.open_target)    
 
+        # Responsive layout for Planning Tool (tab_3)
+        # Group left-side controls into a vertical layout.
+        left_container = QtWidgets.QWidget(self.tab_3)
+        left_layout = QtWidgets.QVBoxLayout(left_container)
+        # use a slightly larger top margin so left column's top lines up with label_2/table top
+        left_layout.setContentsMargins(8, 8, 8, 8)
+        left_layout.setSpacing(8)
+        left_layout.addWidget(self.label)
+        left_layout.addWidget(self.textEdit)
+        left_layout.addWidget(self.coords_label)
+        left_layout.addWidget(self.coords)
+        left_layout.addWidget(self.field_rotation)
+        left_layout.addWidget(self.field_rotation_value)
+        left_layout.addWidget(self.label_filename)
+        left_layout.addWidget(self.textEdit_filename)
+        left_layout.addWidget(self.file_upload)
+        left_layout.addWidget(self.target_list_fname)
+        left_layout.addWidget(self.target_list)
+        left_layout.addWidget(self.load_targets)
+        # action buttons
+        # keep left controls compact; action buttons moved below the table so they sit under it
+        left_layout.addStretch(1)
+        
+
+        # Middle container: make sure slit configuration table is always clearly visible
+        mid_container = QtWidgets.QWidget(self.tab_3)
+        mid_layout = QtWidgets.QVBoxLayout(mid_container)
+        # match left column margins so tops align; keep consistent spacing
+        mid_layout.setContentsMargins(8, 8, 8, 8)
+        mid_layout.setSpacing(8)
+        # make the label compact and give a small fixed gap to the table
+        self.label_2.setFixedHeight(80)
+        self.label_2.setContentsMargins(0, 0, 0, 6)
+        mid_layout.addWidget(self.label_2)
+        # ensure table expands, has minimum width and visible headers
+        self.tableWidget.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        self.tableWidget.setMinimumWidth(360)
+        self.tableWidget.setHorizontalScrollMode(QtWidgets.QAbstractItemView.ScrollPerPixel)
+        # ensure header and cell text use palette (avoid HTML set text), and alternate row colors for clarity
+        self.tableWidget.setAlternatingRowColors(True)
+        
+        mid_layout.addWidget(self.tableWidget)
+        # place action buttons under the table so they are visually tied to the table
+        btn_row = QtWidgets.QHBoxLayout()
+        btn_row.addStretch(1)
+        btn_row.addWidget(self.pushButton_5)
+        btn_row.addWidget(self.cancel_button)
+        btn_row.addWidget(self.import_to_eng)
+        btn_row.addStretch(1)
+        mid_layout.addLayout(btn_row)
+        # mid_layout.addWidget(self.label_Temp)
+        # mid_layout.addWidget(self.lcdNumber)
+
+        # Right container: plotting area (keep existing gridLayoutWidget)
+        right_container = self.gridLayoutWidget
+        right_container.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        right_container.setMinimumWidth(640)
+
+        # Assemble three-column main layout for tab_3 (left controls / table / plot)
+        tab3_main_layout = QtWidgets.QHBoxLayout(self.tab_3)
+        tab3_main_layout.setContentsMargins(10, 10, 10, 10)
+        tab3_main_layout.setSpacing(12)
+        # align all three columns to the top so tops line up and vertical gaps are consistent
+        tab3_main_layout.addWidget(left_container, 0, QtCore.Qt.AlignTop)
+        tab3_main_layout.addWidget(mid_container, 0, QtCore.Qt.AlignTop)
+        tab3_main_layout.addWidget(right_container, 1, QtCore.Qt.AlignTop)
+
+        # Insert the canvas widget into the right container's layout (verticalLayout) so it is visible
+        try:
+            if self.canv not in (None,):
+                self.verticalLayout.addWidget(self.canv)
+        except Exception:
+            pass
+        
+
         self.tabWidget.addTab(self.tab_3, "")
 
 
         ########   TAB ENG  #########################################################
         self.tab_4 = QtWidgets.QWidget()
+
+
+        self.eng_gridLayoutWidget = QtWidgets.QWidget(self.tab_4)
+        self.eng_gridLayoutWidget.setObjectName("eng_gridLayoutWidget")
+        self.eng_gridLayout = QtWidgets.QGridLayout(self.eng_gridLayoutWidget)
+        self.eng_gridLayout.setContentsMargins(0, 0, 0, 0)
+        self.eng_gridLayout.setObjectName("eng_gridLayout")
         
         self.eng_ser_portno_fname = QtWidgets.QLabel(self.tab_4)
         self.eng_ser_portno_fname.setGeometry(QtCore.QRect(120, tab4_y+70*2, 151, 41))
@@ -365,24 +464,44 @@ class Ui_MainWindow(object):
         self.eng_ser_port.setToolTip("Serial port input")
         
         self.eng_ser_port_out = QtWidgets.QLabel(self.tab_4)
-        self.eng_ser_port_out.setGeometry(QtCore.QRect(750, tab4_y+70*10, 200, 41))
+        self.eng_ser_port_out.setGeometry(QtCore.QRect(750, tab4_y+70*10+50, 200, 41))
         self.eng_ser_port_out.setObjectName("Serial port output")
 
         self.eng_ser_port_out_edit = QtWidgets.QTextEdit(self.tab_4, readOnly=True)
-        self.eng_ser_port_out_edit.setGeometry(QtCore.QRect(750, tab4_y+70*10, 400, 200))
+        self.eng_ser_port_out_edit.setGeometry(QtCore.QRect(750, tab4_y+70*10+50, 400, 200))
         self.eng_ser_port_out_edit.setObjectName("Serial port outputbox")
 
+        # Slim label for the engineers table to avoid taking excessive vertical space
         self.eng_label_2 = QtWidgets.QLabel(self.tab_4)
-        self.eng_label_2.setGeometry(QtCore.QRect(120, tab4_y+70*4, 180, 120))
+        # Don't use large absolute geometry here; let layouts control placement/size.
         self.eng_label_2.setObjectName("label_2")
+        # Make label compact and prominent
+        eng_lbl_font = QtGui.QFont()
+        eng_lbl_font.setPointSize(11)
+        # eng_lbl_font.setBold(True)
+        self.eng_label_2.setFont(eng_lbl_font)
+        self.eng_label_2.setMaximumHeight(60)
+        self.eng_label_2.setAlignment(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter)
+        # self.eng_label_2.setWordWrap(False)
 
         
         self.eng_tableWidget = QtWidgets.QTableWidget(self.tab_4)
-        self.eng_tableWidget.setGeometry(QtCore.QRect(377, tab4_y+70*4, 275, 275))
+        self.eng_tableWidget.setGeometry(QtCore.QRect(377, tab4_y+70*3, 275, 275))
         self.eng_tableWidget.setObjectName("tableWidget")
         self.eng_tableWidget.setColumnCount(2)
         self.eng_tableWidget.setRowCount(5)
 
+        
+        # Engineer table: set font and fixed row/header sizes and compute total height
+        eng_font = QtGui.QFont()
+        eng_font.setPointSize(11)
+        self.eng_tableWidget.setFont(eng_font)
+        eng_header_h = 30
+        eng_row_h = 26
+        self.eng_tableWidget.horizontalHeader().setFixedHeight(eng_header_h)
+        self.eng_tableWidget.verticalHeader().setDefaultSectionSize(eng_row_h)
+        self.eng_tableWidget.verticalHeader().setSectionResizeMode(QHeaderView.Fixed)
+        self.eng_tableWidget.setStyleSheet("QTableWidget::item { padding: 4px 6px; }")
 
         item = QtWidgets.QTableWidgetItem()
         self.eng_tableWidget.setVerticalHeaderItem(0, item)
@@ -398,12 +517,18 @@ class Ui_MainWindow(object):
 
         self.eng_tableWidget.horizontalHeader().setStretchLastSection(True)
         self.eng_tableWidget.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.eng_tableWidget.verticalHeader().setStretchLastSection(True)
-        self.eng_tableWidget.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.eng_tableWidget.verticalHeader().setStretchLastSection(False)
         
         self.eng_tableWidget.setHorizontalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
         self.eng_tableWidget.setHorizontalHeaderItem(1, item)
+
+        # compute and fix eng table height so all rows are visible without vertical scrollbar
+        nrows_eng = max(1, self.eng_tableWidget.rowCount())
+        total_h_eng = eng_header_h + nrows_eng * eng_row_h + 6
+        self.eng_tableWidget.setMinimumHeight(total_h_eng)
+        self.eng_tableWidget.setMaximumHeight(total_h_eng)
+        self.eng_tableWidget.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
 
 
@@ -484,18 +609,84 @@ class Ui_MainWindow(object):
         # Connect to MainWindow.send_optic_selection (implemented in MainWindow)
         self.send_optics_button.clicked.connect(self.send_optic_selection)
         
-
-
-        self.eng_gridLayoutWidget = QtWidgets.QWidget(self.tab_4)
-        self.eng_gridLayoutWidget.setGeometry(QtCore.QRect(750,tab4_y,661,661))
-        self.eng_gridLayoutWidget.setObjectName("gridLayoutWidget")
+        # Responsive layout for Observation Setup (tab_4)
+        # Left controls for Observation Setup
+        left_container_eng = QtWidgets.QWidget(self.tab_4)
+        left_layout_eng = QtWidgets.QVBoxLayout(left_container_eng)
+        left_layout_eng.setContentsMargins(8, 8, 8, 8)
+        left_layout_eng.setSpacing(8)
+        left_layout_eng.addWidget(self.eng_ser_portno_fname)
+        left_layout_eng.addWidget(self.eng_ser_port_no)
+        left_layout_eng.addWidget(self.eng_ser_port_fname)
+        left_layout_eng.addWidget(self.eng_ser_port)
+        left_layout_eng.addWidget(self.eng_ser_port_out)
+        left_layout_eng.addWidget(self.eng_ser_port_out_edit)
         
-        self.eng_gridLayoutWidget = QtWidgets.QWidget(self.tab_4)
-        self.eng_gridLayoutWidget.setGeometry(QtCore.QRect(750,tab4_y,661,661))
-        self.eng_gridLayoutWidget.setObjectName("gridLayoutWidget")
-        self.eng_gridLayout = QtWidgets.QGridLayout(self.eng_gridLayoutWidget)
-        self.eng_gridLayout.setContentsMargins(0, 0, 0, 0)
-        self.eng_gridLayout.setObjectName("gridLayout")
+        left_layout_eng.addStretch(1)
+
+        # Middle container for engineers table (ensure top-aligned, fixed vertical gap and consistent margins)
+        mid_container_eng = QtWidgets.QWidget(self.tab_4)
+        mid_layout_eng = QtWidgets.QVBoxLayout(mid_container_eng)
+        # match left column margins and spacing so tops align and gaps are consistent
+        mid_layout_eng.setContentsMargins(8, 8, 8, 8)
+        mid_layout_eng.setSpacing(8)
+        # make eng_label_2 compact and give a small fixed gap to the table
+        self.eng_label_2.setFixedHeight(80)
+        self.eng_label_2.setContentsMargins(0, 0, 0, 6)
+        mid_layout_eng.addWidget(self.eng_label_2)
+        # ensure table expands, has minimum width and visible headers
+        self.eng_tableWidget.setSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Expanding)
+        self.eng_tableWidget.setMinimumWidth(380)
+        self.eng_tableWidget.setAlternatingRowColors(True)
+        mid_layout_eng.addWidget(self.eng_tableWidget)
+        # place engineer action buttons right under the table with fixed spacing
+        eng_btn_row = QtWidgets.QHBoxLayout()
+        eng_btn_row.setSpacing(8)
+        eng_btn_row.addStretch(1)
+        eng_btn_row.addWidget(self.eng_pushButton_5)
+        eng_btn_row.addWidget(self.send_slits_button)
+        eng_btn_row.addStretch(1)
+        mid_layout_eng.addLayout(eng_btn_row)
+        # filters + optics rows below the table (kept compact)
+        flt_row = QtWidgets.QHBoxLayout()
+        flt_row.setSpacing(6)
+        flt_row.addWidget(self.filter1_label)
+        flt_row.addWidget(self.filter1_combo)
+        flt_row.addWidget(self.send_filter1_button)
+        mid_layout_eng.addLayout(flt_row)
+        flt2_row = QtWidgets.QHBoxLayout()
+        flt2_row.setSpacing(6)
+        flt2_row.addWidget(self.filter2_label)
+        flt2_row.addWidget(self.filter2_combo)
+        flt2_row.addWidget(self.send_filter2_button)
+        mid_layout_eng.addLayout(flt2_row)
+        optics_row = QtWidgets.QHBoxLayout()
+        optics_row.setSpacing(6)
+        optics_row.addWidget(self.optics_label)
+        optics_row.addWidget(self.optics_combo)
+        optics_row.addWidget(self.send_optics_button)
+        mid_layout_eng.addLayout(optics_row)
+
+        # Right container: plotting area
+        right_container_eng = self.eng_gridLayoutWidget
+        right_container_eng.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        right_container_eng.setMinimumWidth(640)
+
+        # Assemble three-column main layout for tab_4 (left controls / table / plot)
+        tab4_main_layout = QtWidgets.QHBoxLayout(self.tab_4)
+        tab4_main_layout.setContentsMargins(10, 10, 10, 10)
+        tab4_main_layout.setSpacing(12)
+        # align columns to top so label/table/button vertical gaps match Planning Tool
+        tab4_main_layout.addWidget(left_container_eng, 0, QtCore.Qt.AlignTop)
+        tab4_main_layout.addWidget(mid_container_eng, 0, QtCore.Qt.AlignTop)
+        tab4_main_layout.addWidget(right_container_eng, 1, QtCore.Qt.AlignTop)
+
+        # Insert the eng canvas into the right container layout
+        try:
+            if self.eng_canv not in (None,):
+                self.eng_verticalLayout.addWidget(self.eng_canv)
+        except Exception:
+            pass
 
         
         MainWindow.setCentralWidget(self.tab_4)
@@ -543,7 +734,7 @@ class Ui_MainWindow(object):
         self.label_filename.setText(_translate("MainWindow", "File name"))
         self.label_2.setText(_translate("MainWindow", "Slit Configurations\n(Enter in arcsec)"))
         self.target_list_fname.setText(_translate("MainWindow", "Target list"))
-        self.label_Temp.setText(_translate("MainWindow", "Temperature"))
+        # self.label_Temp.setText(_translate("MainWindow", "Temperature"))
         self.field_rotation.setText(_translate("MainWindow", "FOV Rotation"))
 
         item = self.tableWidget.verticalHeaderItem(0)
@@ -609,7 +800,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # apply default theme (combo was created in setupUi)
         try:
             # set to the combo default and apply theme
-            self.theme_combo.setCurrentIndex(0)
+            self.theme_combo.setCurrentIndex(0)   # 0=Light, 1=Dark
             self.apply_theme(self.theme_combo.currentIndex())
         except Exception:
             pass
@@ -628,7 +819,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
              msg = QMessageBox()
              msg.setIcon(QMessageBox.Critical)
              msg.setText("Serial Port error")
-             msg.setInformativeText(f"<html><head/><body><p><span style=\" color:black;\"> There is some issue in serial port communication.<br> Please try giving it permissions.<br> Use `sudo chmod o+rw /dev/ttyUSB*`</span></p><p><br/></p></body></html>")
+             msg.setInformativeText(f"There is some issue in serial port communication.<br> Please try giving it permissions.<br> Use `sudo chmod o+rw /dev/ttyUSB*`")
              msg.setWindowTitle("Error")
              msg.exec_()
 
@@ -1447,31 +1638,69 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.setStyleSheet("")
         except Exception:
             pass
-        # Use a dark navy background for the window and readable text colors
-        DARK_BG = "#0b1f3a"   # dark navy
-        CONTROL_BG = "#17263a"  # slightly lighter for controls
+
+        # Colors tuned for readable alternating rows in dark mode
+        DARK_BG = "#0b1f3a"       # main window background (dark navy)
+        CONTROL_BG = "#17263a"    # control background (table, lineedit)
+        TABLE_ALT = "#1f334d"     # alternate row background (slightly lighter)
+        HEADER_BG = "#0f2840"     # header background
+        SELECTION_BG = "#2b6aa0"  # selection background
+        TEXT = "#eaeaea"
+
         qapp.setStyleSheet(f"""
-        QWidget {{ background-color: {DARK_BG}; color: #eaeaea; font-family: Times; font-size: 14pt; }}
-        QLineEdit, QComboBox, QTableWidget, QTextEdit {{ background-color: {CONTROL_BG}; color: #eaeaea; selection-background-color: #2b6aa0; }}
-        QPushButton {{ background-color: #1f4e7a; color: #ffffff; border: 1px solid #0b1f3a; padding: 4px; }}
+        QWidget {{ background-color: {DARK_BG}; color: {TEXT}; font-family: Times; font-size: 14pt; }}
+
+        /* Controls */
+        QLineEdit, QComboBox, QTextEdit {{ background-color: {CONTROL_BG}; color: {TEXT}; selection-background-color: {SELECTION_BG}; selection-color: #ffffff; }}
+        QPushButton {{ background-color: #1f4e7a; color: #ffffff; border: 1px solid {DARK_BG}; padding: 4px; }}
+
+        /* Tables: ensure alternate rows are readable */
+        QTableWidget, QTableView {{
+            background-color: {CONTROL_BG};
+            color: {TEXT};
+            alternate-background-color: {TABLE_ALT};
+            selection-background-color: {SELECTION_BG};
+            selection-color: #ffffff;
+            gridline-color: #213444;
+        }}
+        QTableWidget::item {{
+            padding: 4px 6px;
+        }}
+        QTableWidget::item:selected {{
+            background: {SELECTION_BG};
+            color: #ffffff;
+        }}
+
+        /* Header styling */
+        QHeaderView::section {{
+            background-color: {HEADER_BG};
+            color: {TEXT};
+            padding: 4px;
+            border: 0px;
+        }}
+
+        /* Combo popup */
+        QComboBox QAbstractItemView {{ background-color: {CONTROL_BG}; color: {TEXT}; selection-background-color: {SELECTION_BG}; }}
+
         QTabWidget::pane {{ background: {DARK_BG}; }}
-        QStatusBar {{ background: #071427; color: #eaeaea; }}
-        QComboBox QAbstractItemView {{ background-color: {CONTROL_BG}; color: #eaeaea; selection-background-color: #2b6aa0; }}
+        QStatusBar {{ background: #071427; color: {TEXT}; }}
         """)
+
         # Ensure main window background uses the same dark navy (overrides any earlier MainWindow stylesheet)
         try:
             self.setStyleSheet(f"QMainWindow {{ background-color: {DARK_BG}; }}")
         except Exception:
             pass
+
         # Matplotlib dark style
         try:
             plt.style.use('dark_background')
         except Exception:
             pass
+
         # Redraw canvases so matplotlib picks up dark style
         try:
             if hasattr(self, "canv") and self.canv:
-                # set facecolor to transparent so underlying widget bg shows through
                 self.canv.fig.set_facecolor('none')
                 for ax in self.canv.fig.axes:
                     ax.set_facecolor(DARK_BG)
