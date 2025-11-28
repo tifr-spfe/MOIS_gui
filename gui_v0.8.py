@@ -365,12 +365,12 @@ class Ui_MainWindow(object):
         self.eng_ser_port.setToolTip("Serial port input")
         
         self.eng_ser_port_out = QtWidgets.QLabel(self.tab_4)
-        self.eng_ser_port_out.setGeometry(QtCore.QRect(120, tab4_y+70*12, 200, 41))
+        self.eng_ser_port_out.setGeometry(QtCore.QRect(750, tab4_y+70*10, 200, 41))
         self.eng_ser_port_out.setObjectName("Serial port output")
 
         self.eng_ser_port_out_edit = QtWidgets.QTextEdit(self.tab_4, readOnly=True)
-        self.eng_ser_port_out_edit.setGeometry(QtCore.QRect(377, tab4_y+70*12, 281, 41))
-        self.eng_ser_port_out.setObjectName("Serial port outputbox")
+        self.eng_ser_port_out_edit.setGeometry(QtCore.QRect(750, tab4_y+70*10, 400, 200))
+        self.eng_ser_port_out_edit.setObjectName("Serial port outputbox")
 
         self.eng_label_2 = QtWidgets.QLabel(self.tab_4)
         self.eng_label_2.setGeometry(QtCore.QRect(120, tab4_y+70*4, 180, 120))
@@ -428,16 +428,16 @@ class Ui_MainWindow(object):
         self.filter1_label.setObjectName("filter1_label")
         self.filter1_label.setText("Filter Wheel 1")
         self.filter1_combo = QtWidgets.QComboBox(self.tab_4)
-        self.filter1_combo.setGeometry(QtCore.QRect(270, tab4_y+70*10, 120, 31))
+        self.filter1_combo.setGeometry(QtCore.QRect(270+50, tab4_y+70*10, 120, 31))
         self.filter1_combo.setObjectName("filter1_combo")
         self.filter1_combo.addItems(["Filter1", "Filter2", "Filter3", "Filter4", "Filter5"])
         self.filter1_combo.setToolTip("Select filter for Wheel 1")
-        self.filter1_combo.setStyleSheet(
-            "QComboBox { color: black; background-color: white; }"
-            "QComboBox QAbstractItemView { background-color: white; color: black; selection-background-color: #d0e7ff; }"
-        )
+        # self.filter1_combo.setStyleSheet(
+        #     "QComboBox { color: black; background-color: white; }"
+        #     "QComboBox QAbstractItemView { background-color: white; color: black; selection-background-color: #d0e7ff; }"
+        # )
         self.send_filter1_button = QtWidgets.QPushButton(self.tab_4)
-        self.send_filter1_button.setGeometry(QtCore.QRect(400, tab4_y+70*10, 200, 31))
+        self.send_filter1_button.setGeometry(QtCore.QRect(400+50, tab4_y+70*10, 200, 31))
         self.send_filter1_button.setObjectName("send_filter1_button")
         self.send_filter1_button.setText("Send Filter for W1")
         self.send_filter1_button.setToolTip("Send selected filter for Wheel 1")
@@ -449,20 +449,40 @@ class Ui_MainWindow(object):
         self.filter2_label.setObjectName("filter2_label")
         self.filter2_label.setText("Filter Wheel 2")
         self.filter2_combo = QtWidgets.QComboBox(self.tab_4)
-        self.filter2_combo.setGeometry(QtCore.QRect(270, tab4_y+70*11, 120, 31))
+        self.filter2_combo.setGeometry(QtCore.QRect(270+50, tab4_y+70*11, 120, 31))
         self.filter2_combo.setObjectName("filter2_combo")
         self.filter2_combo.addItems(["Filter1", "Filter2", "Filter3", "Filter4", "Filter5"])
         self.filter2_combo.setToolTip("Select filter for Wheel 2")
-        self.filter2_combo.setStyleSheet(
-            "QComboBox { color: black; background-color: white; }"
-            "QComboBox QAbstractItemView { background-color: white; color: black; selection-background-color: #d0e7ff; }"
-        )
+        # self.filter2_combo.setStyleSheet(
+        #     "QComboBox { color: black; background-color: white; }"
+        #     "QComboBox QAbstractItemView { background-color: white; color: black; selection-background-color: #d0e7ff; }"
+        # )
         self.send_filter2_button = QtWidgets.QPushButton(self.tab_4)
-        self.send_filter2_button.setGeometry(QtCore.QRect(400, tab4_y+70*11, 200, 31))
+        self.send_filter2_button.setGeometry(QtCore.QRect(400+50, tab4_y+70*11, 200, 31))
         self.send_filter2_button.setObjectName("send_filter2_button")
         self.send_filter2_button.setText("Send Filter for W2")
         self.send_filter2_button.setToolTip("Send selected filter for Wheel 2")
         self.send_filter2_button.clicked.connect(self.send_filter_wheel2)        
+
+        # Mirror / Grating 1 / Grating 2 selector + send button
+        self.optics_label = QtWidgets.QLabel(self.tab_4)
+        self.optics_label.setGeometry(QtCore.QRect(120, tab4_y+70*12, 170, 31))
+        self.optics_label.setObjectName("optics_label")
+        self.optics_label.setText("Grating / Mirror")
+
+        self.optics_combo = QtWidgets.QComboBox(self.tab_4)
+        self.optics_combo.setGeometry(QtCore.QRect(270+50, tab4_y+70*12, 160, 31))
+        self.optics_combo.setObjectName("optics_combo")
+        self.optics_combo.addItems(["Mirror", "Grating 1", "Grating 2"])
+        self.optics_combo.setToolTip("Select Mirror or Grating")
+
+        self.send_optics_button = QtWidgets.QPushButton(self.tab_4)
+        self.send_optics_button.setGeometry(QtCore.QRect(440+50, tab4_y+70*12, 160, 31))
+        self.send_optics_button.setObjectName("send_optics_button")
+        self.send_optics_button.setText("Send Optic")
+        self.send_optics_button.setToolTip("Send selected optic (mirror/grating) to hardware")
+        # Connect to MainWindow.send_optic_selection (implemented in MainWindow)
+        self.send_optics_button.clicked.connect(self.send_optic_selection)
         
 
 
@@ -583,6 +603,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.threadpool = QtCore.QThreadPool()
         #self.worker_thread = WorkerThread()
         self.setupUi(self)
+
+        self.serial_port = None
 
         # apply default theme (combo was created in setupUi)
         try:
@@ -1076,11 +1098,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             msg.exec_()
             
     def send_data(self):
-        data = self.eng_ser_port.text().encode()
-        if len(data)!=0:
-            self.serial_port.write(data)
-        else:
-            self.eng_ser_port_out_edit.setText(f"<html><head/><body><p><span style=\" color:red;\">Serial Port connection failure</span></p><p><br/></p></body></html>")
+        data_str = self.eng_ser_port.text().strip()
+        if not data_str:
+            self.eng_ser_port_out_edit.setHtml('<span style="color:red;">Serial Port connection failure: no data to send</span>')
+            return
+
+        if not hasattr(self, "serial_port") or self.serial_port is None:
+            self.eng_ser_port_out_edit.setHtml('<span style="color:red;">Serial Port not available</span>')
+            return
+        try:
+            self.serial_port.write(data_str.encode())
+        except Exception as e:
+            self.eng_ser_port_out_edit.setHtml(f'<span style="color:red;">Send failed: {e}</span>')
 
     def receive_data(self, received_data):
         self.eng_ser_port_out_edit.setText(f"<html><head/><body><p><span style=\" color:red;\">{received_data}</span></p><p><br/></p></body></html>")
@@ -1156,7 +1185,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
             msg.setText("Serial Port Not Available")
-            msg.setInformativeText("Serial port not connected. Cannot send filter command.")
+            msg.setInformativeText("Serial port not connected. Cannot send filter selection.")
             msg.setWindowTitle("Error")
             msg.exec_()
             return
@@ -1203,7 +1232,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
             msg.setText("Serial Port Not Available")
-            msg.setInformativeText("Serial port not connected. Cannot send filter command.")
+            msg.setInformativeText("Serial port not connected. Cannot send filter selection.")
             msg.setWindowTitle("Error")
             msg.exec_()
             return
@@ -1228,6 +1257,53 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             msg.setIcon(QMessageBox.Critical)
             msg.setText("Send Failed")
             msg.setInformativeText(f"Failed to send filter command: {e}")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+
+    def send_optic_selection(self):
+        """Send selected optic (mirror/grating) via serial port.
+        Payload: 'OPTIC;<index>;<name>\\n' where index = 1:Mirror, 2:Grating1, 3:Grating2"""
+        try:
+            idx = self.optics_combo.currentIndex()
+            name = self.optics_combo.currentText()
+        except Exception:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("Optics Selection Error")
+            msg.setInformativeText("Optics selector missing.")
+            msg.setWindowTitle("Warning")
+            msg.exec_()
+            return
+
+        if not hasattr(self, "serial_port") or self.serial_port is None:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Serial Port Not Available")
+            msg.setInformativeText("Serial port not connected. Cannot send optics command.")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            return
+        try:
+            if not getattr(self.serial_port, "is_open", True):
+                raise RuntimeError("Serial port is closed")
+        except Exception:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Serial Port Error")
+            msg.setInformativeText("Serial port not open or unavailable.")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            return
+
+        payload = f"OPTIC;{idx+1};{name}\n"
+        try:
+            self.serial_port.write(payload.encode())
+            self.statusbar.showMessage(f"Sent optic {idx+1} ({name})", 3000)
+        except Exception as e:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Send Failed")
+            msg.setInformativeText(f"Failed to send optic command: {e}")
             msg.setWindowTitle("Error")
             msg.exec_()
 
